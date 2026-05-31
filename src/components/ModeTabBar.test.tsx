@@ -40,4 +40,11 @@ describe('ModeTabBar', () => {
 
     expect(onModeChange).toHaveBeenCalledWith('encrypt')
   })
+
+  it('when decrypt mode is active, Decrypt tab has aria-selected=true and Encrypt tab has aria-selected=false', () => {
+    render(<ModeTabBar mode="decrypt" onModeChange={vi.fn()} />)
+
+    expect(screen.getByRole('tab', { name: /decrypt/i })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: /encrypt/i })).toHaveAttribute('aria-selected', 'false')
+  })
 })

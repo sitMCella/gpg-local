@@ -71,3 +71,23 @@ export async function invokeEncryptFile(options: EncryptFileOptions): Promise<vo
   }
   return Promise.resolve()
 }
+
+export interface DecryptFileOptions {
+  input_path: string
+  output_path: string
+  passphrase: string
+}
+
+export async function invokeDecryptFile(options: DecryptFileOptions): Promise<void> {
+  if (isTauri()) {
+    const { invoke } = await import('@tauri-apps/api/core')
+    return invoke('decrypt_file', { options })
+  }
+  const win = window as unknown as {
+    __E2E_MOCK_DECRYPT_FILE__?: (opts: DecryptFileOptions) => Promise<void>
+  }
+  if (typeof window !== 'undefined' && win.__E2E_MOCK_DECRYPT_FILE__) {
+    return win.__E2E_MOCK_DECRYPT_FILE__(options)
+  }
+  return Promise.resolve()
+}
