@@ -3,6 +3,9 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 @specs/features/01-tauri-wrapper.md
+@specs/features/02-gpg-library.md
+@specs/features/03-file-browse.md
+@specs/features/04-encrypt-file.md
 
 ## Project motivation
 
