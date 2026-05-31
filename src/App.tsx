@@ -9,9 +9,28 @@ import FolderTree from '@/components/FolderTree'
 import PathBreadcrumb from '@/components/PathBreadcrumb'
 import { getHomeDir, openDirectoryPicker } from '@/lib/platform'
 
+function useSidebarSizePercent(defaultPx: number, maxPx: number, minPercent: number) {
+  const compute = (w: number) => ({
+    defaultSize: Math.round((defaultPx / w) * 100),
+    maxSize: Math.min(50, Math.round((maxPx / w) * 100)),
+    minSize: minPercent,
+  })
+
+  const [sizes, setSizes] = useState(() => compute(window.innerWidth))
+
+  useEffect(() => {
+    const handler = () => setSizes(compute(window.innerWidth))
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+
+  return sizes
+}
+
 export default function App() {
   const [rootPath, setRootPath] = useState<string>('')
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
+  const sidebarSize = useSidebarSizePercent(200, 400, 15)
 
   useEffect(() => {
     getHomeDir().then((home) => {
@@ -71,9 +90,9 @@ export default function App() {
         {/* Body — resizable split */}
         <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden">
           <ResizablePanel
-            defaultSize={25}
-            minSize={15}
-            maxSize={50}
+            defaultSize={sidebarSize.defaultSize}
+            minSize={sidebarSize.minSize}
+            maxSize={sidebarSize.maxSize}
             className="bg-sidebar text-sidebar-foreground"
           >
             {rootPath && (
@@ -87,7 +106,7 @@ export default function App() {
 
           <ResizableHandle withHandle />
 
-          <ResizablePanel defaultSize={75}>
+          <ResizablePanel defaultSize={100 - sidebarSize.defaultSize}>
             <FileList dirPath={selectedPath} onNavigate={setSelectedPath} />
           </ResizablePanel>
         </ResizablePanelGroup>
