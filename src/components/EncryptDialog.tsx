@@ -160,7 +160,7 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose} disabled={loading}>
+          <Button variant="ghost" onClick={() => { reset(); onClose() }} disabled={loading}>
             Cancel
           </Button>
           <Button onClick={handleEncrypt} disabled={loading}>
