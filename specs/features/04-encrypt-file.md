@@ -174,7 +174,7 @@ Layout:
 │  Encrypt file                       [✕]  │
 │                                          │
 │  File: report.md                         │
-│  Output: report.md.gpg (same folder)     │
+│  Output: report.md.gpg                   │
 │                                          │
 │  Passphrase                              │
 │  [••••••••••••••••••••••••••]  [👁]      │
@@ -363,7 +363,7 @@ src-tauri/
 │  Encrypt file                       [✕]  │
 │                                          │
 │  File: report.md                         │
-│  Output: report.md.gpg (same folder)     │
+│  Output: report.md.gpg                   │
 │                                          │
 │  Passphrase                              │
 │  [                              ]  [👁]  │
@@ -382,7 +382,7 @@ src-tauri/
 - **Passphrases are never persisted.** They exist only in React component state for the lifetime of the dialog and as a string argument to the Tauri command. They are cleared when the dialog closes.
 - **No passphrase strength enforcement** beyond the 8-character minimum in this feature. A follow-up may add entropy estimation (e.g., zxcvbn).
 - **The original file is not deleted.** The user retains the plaintext file. Secure deletion of the source is a separate, opt-in action.
-- **Output path is deterministic** (`<input>.gpg`). If a file with that name already exists it is **silently overwritten** — the Tauri command uses `std::fs::write`, which truncates and replaces any existing file without prompting. The dialog always displays the computed output filename (e.g. `report.md.gpg (same folder)`) so the user can see what will be written before clicking **Encrypt**. A future enhancement may add an explicit overwrite-confirmation step when the output file already exists.
+- **Output path is deterministic** (`<input>.gpg`). If a file with that name already exists it is **silently overwritten** — the Tauri command uses `std::fs::write`, which truncates and replaces any existing file without prompting. The dialog always displays the computed output filename (e.g. `report.md.gpg`) so the user can see what will be written before clicking **Encrypt**. A future enhancement may add an explicit overwrite-confirmation step when the output file already exists.
 
 ---
 

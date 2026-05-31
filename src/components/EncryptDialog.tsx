@@ -89,7 +89,7 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
           {target && (
             <div className="text-sm text-muted-foreground flex flex-col gap-0.5">
               <span>File: <span className="font-medium text-foreground">{target.name}</span></span>
-              <span>Output: <span className="font-medium text-foreground">{outputName}</span> (same folder)</span>
+              <span>Output: <span className="font-medium text-foreground">{outputName}</span></span>
             </div>
           )}
         </DialogHeader>
