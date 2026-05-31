@@ -205,6 +205,42 @@ test.describe('breadcrumb toolbar', () => {
 // ─── AC6: sidebar resize ─────────────────────────────────────────────────────
 
 test.describe('panel resize', () => {
+  test('sidebar opens at the 200 px default width', async ({ page }) => {
+    await injectMocks(page)
+    await page.goto('/')
+
+    // Wait for the layout to stabilise — the handle is only visible once panels are sized
+    const handle = page.locator('[data-slot="resizable-handle"]')
+    await expect(handle).toBeVisible()
+
+    const sidebarPanel = page.locator('[data-slot="resizable-panel"]').first()
+    const box = await sidebarPanel.boundingBox()
+    expect(box).not.toBeNull()
+    // Allow ±2 px for sub-pixel rounding across browsers
+    expect(box!.width).toBeGreaterThanOrEqual(198)
+    expect(box!.width).toBeLessThanOrEqual(202)
+  })
+
+  test('sidebar cannot be resized beyond the 400 px maximum', async ({ page }) => {
+    await injectMocks(page)
+    await page.goto('/')
+
+    const handle = page.locator('[data-slot="resizable-handle"]')
+    await expect(handle).toBeVisible()
+
+    await handle.focus()
+    // Each ArrowRight step is ~1 % of the group width; 50 presses exceeds any reasonable cap
+    for (let i = 0; i < 50; i++) {
+      await page.keyboard.press('ArrowRight')
+    }
+
+    const sidebarPanel = page.locator('[data-slot="resizable-panel"]').first()
+    const box = await sidebarPanel.boundingBox()
+    expect(box).not.toBeNull()
+    // maxSize="400px" must be honoured; allow 2 px tolerance
+    expect(box!.width).toBeLessThanOrEqual(402)
+  })
+
   test('keyboard-resizing the handle changes the sidebar width', async ({ page }) => {
     await injectMocks(page)
     await page.goto('/')
