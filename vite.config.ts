@@ -3,6 +3,15 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    port: 5173,
+    strictPort: true,
+    open: false,
+  },
+  envPrefix: ['VITE_', 'TAURI_'],
+  build: {
+    target: 'esnext',
+  },
   test: {
     environment: 'jsdom',
     globals: true,

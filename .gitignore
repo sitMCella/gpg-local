@@ -9,3 +9,6 @@ test-results
 .env
 .env.local
 *.tsbuildinfo
+
+# Tauri
+src-tauri/target/
