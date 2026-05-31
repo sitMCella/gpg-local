@@ -495,3 +495,37 @@ test.describe('loading state while encrypting', () => {
     await expect(page.getByRole('dialog', { name: /encrypt file/i })).not.toBeVisible()
   })
 })
+
+// ─── Enter key in Confirm passphrase field ────────────────────────────────────
+
+test.describe('Enter key shortcut in Confirm passphrase field', () => {
+  test('pressing Enter in Confirm passphrase triggers encryption', async ({ page }) => {
+    await injectMocks(page, {
+      tree: { [HOME]: HOME_ENTRIES },
+      treeAfterEncrypt: { [HOME]: HOME_ENTRIES_AFTER_ENCRYPT },
+      encryptResult: 'success',
+    })
+    await page.goto('/')
+    await openEncryptDialog(page, 'report.md')
+
+    await page.getByLabel(/^passphrase$/i).fill('supersecret')
+    await page.getByLabel(/confirm passphrase/i).fill('supersecret')
+    await page.getByLabel(/confirm passphrase/i).press('Enter')
+
+    // Dialog should close, same as clicking Encrypt
+    await expect(page.getByRole('dialog', { name: /encrypt file/i })).not.toBeVisible()
+    await expect(page.getByText(/report\.md encrypted → report\.md\.gpg/i)).toBeVisible()
+  })
+
+  test('pressing Enter in Confirm passphrase still validates the form', async ({ page }) => {
+    await injectMocks(page, { tree: { [HOME]: HOME_ENTRIES } })
+    await page.goto('/')
+    await openEncryptDialog(page, 'report.md')
+
+    // Leave passphrase empty and press Enter in the confirm field
+    await page.getByLabel(/confirm passphrase/i).press('Enter')
+
+    await expect(page.getByRole('alert')).toContainText(/passphrase must not be empty/i)
+    await expect(page.getByRole('dialog', { name: /encrypt file/i })).toBeVisible()
+  })
+})

@@ -218,4 +218,89 @@ describe('FileList', () => {
     expect(screen.queryByText('Encrypt file')).not.toBeInTheDocument()
     expect(onEncryptRequest).not.toHaveBeenCalled()
   })
+
+  // ---- Feature 05 additions ----
+
+  it('in decrypt mode, a .gpg file row does not have cursor-not-allowed', async () => {
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'secret.gpg', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="decrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    expect(row.className).not.toContain('cursor-not-allowed')
+    expect(row).not.toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('in decrypt mode, a .gpg file row shows "Decrypt file" context menu item on right-click', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'report.md.gpg', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="decrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    expect(await screen.findByText('Decrypt file')).toBeInTheDocument()
+  })
+
+  it('in decrypt mode, a .txt file row has cursor-not-allowed', async () => {
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'notes.txt', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="decrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    expect(row.className).toContain('cursor-not-allowed')
+    expect(row).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('in decrypt mode, a .txt file row does not show context menu on right-click', async () => {
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'notes.txt', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="decrypt" onNavigate={vi.fn()} />)
+
+    await screen.findByRole('row')
+    expect(screen.queryByText('Decrypt file')).not.toBeInTheDocument()
+  })
+
+  it('in decrypt mode, a directory row does not have cursor-not-allowed', async () => {
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'Documents', isDirectory: true, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="decrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    expect(row.className).not.toContain('cursor-not-allowed')
+    expect(row).not.toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('in decrypt mode, a .pgp file row does not have cursor-not-allowed and shows "Decrypt file" on right-click', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'archive.pgp', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="decrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    expect(row.className).not.toContain('cursor-not-allowed')
+    expect(row).not.toHaveAttribute('aria-disabled', 'true')
+
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+    expect(await screen.findByText('Decrypt file')).toBeInTheDocument()
+  })
 })

@@ -23,15 +23,24 @@ impl DecryptionHelper for KeyringHelper {
     fn decrypt<D>(
         &mut self,
         pkesks: &[sequoia_openpgp::packet::PKESK],
-        _skesks: &[sequoia_openpgp::packet::SKESK],
+        skesks: &[sequoia_openpgp::packet::SKESK],
         sym_algo: Option<SymmetricAlgorithm>,
         mut decrypt: D,
     ) -> sequoia_openpgp::Result<Option<Fingerprint>>
     where
         D: FnMut(SymmetricAlgorithm, &SessionKey) -> bool,
     {
-        let policy = sequoia_openpgp::policy::StandardPolicy::new();
+        // Try symmetric passphrase first (SKESK packets — produced by symmetric-only encryption)
+        for skesk in skesks {
+            if let Ok((algo, sk)) = skesk.decrypt(&self.passphrase) {
+                if decrypt(algo, &sk) {
+                    return Ok(None);
+                }
+            }
+        }
 
+        // Fall back to public-key decryption (PKESK packets)
+        let policy = sequoia_openpgp::policy::StandardPolicy::new();
         for pkesk in pkesks {
             for cert in &self.certs {
                 for key in cert

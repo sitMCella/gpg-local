@@ -1,10 +1,12 @@
 import { File, FileText, Folder, Loader2, Lock, RefreshCw } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ContextMenuRoot, ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu'
 import { useDirectory } from '@/hooks/useDirectory'
+import { toast } from '@/components/ui/toast'
+import DecryptDialog from '@/components/DecryptDialog'
 import type { FsEntry } from '@/types/fs'
 import type { AppMode } from '@/components/ModeTabBar'
 
@@ -21,7 +23,9 @@ function isEncryptedFile(entry: FsEntry): boolean {
 }
 
 function isDisabled(entry: FsEntry, mode: AppMode): boolean {
+  if (entry.isDir) return false
   if (mode === 'encrypt') return isEncryptedFile(entry)
+  if (mode === 'decrypt') return !isEncryptedFile(entry)
   return false
 }
 
@@ -59,9 +63,17 @@ interface FileListItemProps {
   mode: AppMode
   onNavigate: (path: string) => void
   onEncryptRequest?: (entry: FsEntry) => void
+  onDecryptRequest?: (entry: FsEntry) => void
 }
 
-function FileListItem({ entry, disabled, mode, onNavigate, onEncryptRequest }: FileListItemProps) {
+function FileListItem({
+  entry,
+  disabled,
+  mode,
+  onNavigate,
+  onEncryptRequest,
+  onDecryptRequest,
+}: FileListItemProps) {
   const handleDoubleClick = () => {
     if (!disabled && entry.isDir) onNavigate(entry.path)
   }
@@ -108,12 +120,18 @@ function FileListItem({ entry, disabled, mode, onNavigate, onEncryptRequest }: F
           <ContextMenuItem onClick={() => onEncryptRequest?.(entry)}>Encrypt file</ContextMenuItem>
         </ContextMenuContent>
       )}
+      {mode === 'decrypt' && !entry.isDir && (
+        <ContextMenuContent>
+          <ContextMenuItem onClick={() => onDecryptRequest?.(entry)}>Decrypt file</ContextMenuItem>
+        </ContextMenuContent>
+      )}
     </ContextMenuRoot>
   )
 }
 
 export default function FileList({ dirPath, mode, onNavigate, onEncryptRequest }: FileListProps) {
   const { entries, loading, error, read } = useDirectory()
+  const [decryptTarget, setDecryptTarget] = useState<FsEntry | null>(null)
 
   useEffect(() => {
     if (dirPath) read(dirPath)
@@ -121,6 +139,17 @@ export default function FileList({ dirPath, mode, onNavigate, onEncryptRequest }
 
   function refresh() {
     if (dirPath) read(dirPath)
+  }
+
+  function handleDecryptSuccess(outputPath: string) {
+    setDecryptTarget(null)
+    refresh()
+    const outputName = outputPath.split('/').pop() ?? outputPath
+    const inputName = `${outputName}.gpg`
+    toast.add({
+      title: `${inputName} decrypted → ${outputName}`,
+      timeout: 4000,
+    })
   }
 
   if (!dirPath) {
@@ -132,53 +161,63 @@ export default function FileList({ dirPath, mode, onNavigate, onEncryptRequest }
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-2">
-        <Button variant="ghost" size="icon-sm" onClick={refresh} aria-label="Reload directory">
-          <RefreshCw className="size-3.5" />
-        </Button>
-        <span className="text-xs text-muted-foreground">
-          {loading ? 'Loading…' : `${entries.length} item${entries.length !== 1 ? 's' : ''}`}
-        </span>
+    <>
+      <div className="flex h-full flex-col">
+        <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-2">
+          <Button variant="ghost" size="icon-sm" onClick={refresh} aria-label="Reload directory">
+            <RefreshCw className="size-3.5" />
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {loading ? 'Loading…' : `${entries.length} item${entries.length !== 1 ? 's' : ''}`}
+          </span>
+        </div>
+
+        {error && (
+          <div
+            role="alert"
+            className="m-4 rounded border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          >
+            {error}
+          </div>
+        )}
+
+        {loading && (
+          <div className="flex flex-1 items-center justify-center">
+            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
+        {!loading && !error && entries.length === 0 && (
+          <div className="flex flex-1 items-center justify-center text-muted-foreground text-sm italic">
+            Select a folder from the sidebar to browse its contents.
+          </div>
+        )}
+
+        {!loading && entries.length > 0 && (
+          <ScrollArea className="flex-1">
+            <div role="table" className="py-2 px-2" aria-label="File list">
+              {entries.map((entry) => (
+                <FileListItem
+                  key={entry.path}
+                  entry={entry}
+                  disabled={isDisabled(entry, mode)}
+                  mode={mode}
+                  onNavigate={onNavigate}
+                  onEncryptRequest={onEncryptRequest}
+                  onDecryptRequest={setDecryptTarget}
+                />
+              ))}
+            </div>
+          </ScrollArea>
+        )}
       </div>
 
-      {error && (
-        <div
-          role="alert"
-          className="m-4 rounded border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-        >
-          {error}
-        </div>
-      )}
-
-      {loading && (
-        <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="size-5 animate-spin text-muted-foreground" />
-        </div>
-      )}
-
-      {!loading && !error && entries.length === 0 && (
-        <div className="flex flex-1 items-center justify-center text-muted-foreground text-sm italic">
-          Select a folder from the sidebar to browse its contents.
-        </div>
-      )}
-
-      {!loading && entries.length > 0 && (
-        <ScrollArea className="flex-1">
-          <div role="table" className="py-2 px-2" aria-label="File list">
-            {entries.map((entry) => (
-              <FileListItem
-                key={entry.path}
-                entry={entry}
-                disabled={isDisabled(entry, mode)}
-                mode={mode}
-                onNavigate={onNavigate}
-                onEncryptRequest={onEncryptRequest}
-              />
-            ))}
-          </div>
-        </ScrollArea>
-      )}
-    </div>
+      <DecryptDialog
+        key={decryptTarget?.path ?? ''}
+        target={decryptTarget}
+        onClose={() => setDecryptTarget(null)}
+        onSuccess={handleDecryptSuccess}
+      />
+    </>
   )
 }
