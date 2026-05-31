@@ -213,6 +213,7 @@ export default function FileList({ dirPath, mode, onNavigate, onEncryptRequest }
       </div>
 
       <DecryptDialog
+        key={decryptTarget?.path ?? ''}
         target={decryptTarget}
         onClose={() => setDecryptTarget(null)}
         onSuccess={handleDecryptSuccess}

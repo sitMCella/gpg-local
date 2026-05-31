@@ -185,7 +185,7 @@ describe('DecryptDialog', () => {
     const user = userEvent.setup()
 
     function Wrapper({ target }: { target: typeof mockTarget | null }) {
-      return <DecryptDialog target={target} onClose={vi.fn()} onSuccess={vi.fn()} />
+      return <DecryptDialog key={target?.path ?? ''} target={target} onClose={vi.fn()} onSuccess={vi.fn()} />
     }
 
     const { rerender } = render(<Wrapper target={mockTarget} />)
@@ -207,7 +207,7 @@ describe('DecryptDialog', () => {
     )
 
     function Wrapper({ target }: { target: typeof mockTarget | null }) {
-      return <DecryptDialog target={target} onClose={vi.fn()} onSuccess={vi.fn()} />
+      return <DecryptDialog key={target?.path ?? ''} target={target} onClose={vi.fn()} onSuccess={vi.fn()} />
     }
 
     const { rerender } = render(<Wrapper target={mockTarget} />)
@@ -240,7 +240,7 @@ describe('DecryptDialog', () => {
     const user = userEvent.setup()
 
     function Wrapper({ target }: { target: typeof mockTarget | null }) {
-      return <DecryptDialog target={target} onClose={vi.fn()} onSuccess={vi.fn()} />
+      return <DecryptDialog key={target?.path ?? ''} target={target} onClose={vi.fn()} onSuccess={vi.fn()} />
     }
 
     const { rerender } = render(<Wrapper target={mockTarget} />)

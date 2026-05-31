@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,15 +24,6 @@ export default function DecryptDialog({ target, onClose, onSuccess }: DecryptDia
   const [showPassphrase, setShowPassphrase] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    if (target !== null) {
-      setPassphrase('')
-      setShowPassphrase(false)
-      setError(null)
-      setLoading(false)
-    }
-  }, [target])
 
   function handleOpenChange(open: boolean) {
     if (!open) {
