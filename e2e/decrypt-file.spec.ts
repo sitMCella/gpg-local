@@ -325,15 +325,13 @@ test.describe('loading state while decrypting', () => {
     await page.addInitScript(
       ({ h, t }: { h: string; t: Record<string, MockEntry[]> }) => {
         ;(window as { __E2E_MOCK_HOME_DIR__?: string }).__E2E_MOCK_HOME_DIR__ = h
-        ;(
-          window as { __E2E_MOCK_READ_DIR__?: (p: string) => MockEntry[] }
-        ).__E2E_MOCK_READ_DIR__ = (path: string) => t[path] ?? []
-        ;(
-          window as { __E2E_MOCK_DECRYPT_FILE__?: () => Promise<void> }
-        ).__E2E_MOCK_DECRYPT_FILE__ = () =>
-          new Promise(() => {
-            /* never resolves */
-          })
+        ;(window as { __E2E_MOCK_READ_DIR__?: (p: string) => MockEntry[] }).__E2E_MOCK_READ_DIR__ =
+          (path: string) => t[path] ?? []
+        ;(window as { __E2E_MOCK_DECRYPT_FILE__?: () => Promise<void> }).__E2E_MOCK_DECRYPT_FILE__ =
+          () =>
+            new Promise(() => {
+              /* never resolves */
+            })
       },
       { h: HOME, t: { [HOME]: HOME_ENTRIES } }
     )
@@ -353,15 +351,13 @@ test.describe('loading state while decrypting', () => {
     await page.addInitScript(
       ({ h, t }: { h: string; t: Record<string, MockEntry[]> }) => {
         ;(window as { __E2E_MOCK_HOME_DIR__?: string }).__E2E_MOCK_HOME_DIR__ = h
-        ;(
-          window as { __E2E_MOCK_READ_DIR__?: (p: string) => MockEntry[] }
-        ).__E2E_MOCK_READ_DIR__ = (path: string) => t[path] ?? []
-        ;(
-          window as { __E2E_MOCK_DECRYPT_FILE__?: () => Promise<void> }
-        ).__E2E_MOCK_DECRYPT_FILE__ = () =>
-          new Promise(() => {
-            /* never resolves */
-          })
+        ;(window as { __E2E_MOCK_READ_DIR__?: (p: string) => MockEntry[] }).__E2E_MOCK_READ_DIR__ =
+          (path: string) => t[path] ?? []
+        ;(window as { __E2E_MOCK_DECRYPT_FILE__?: () => Promise<void> }).__E2E_MOCK_DECRYPT_FILE__ =
+          () =>
+            new Promise(() => {
+              /* never resolves */
+            })
       },
       { h: HOME, t: { [HOME]: HOME_ENTRIES } }
     )
@@ -381,15 +377,13 @@ test.describe('loading state while decrypting', () => {
     await page.addInitScript(
       ({ h, t }: { h: string; t: Record<string, MockEntry[]> }) => {
         ;(window as { __E2E_MOCK_HOME_DIR__?: string }).__E2E_MOCK_HOME_DIR__ = h
-        ;(
-          window as { __E2E_MOCK_READ_DIR__?: (p: string) => MockEntry[] }
-        ).__E2E_MOCK_READ_DIR__ = (path: string) => t[path] ?? []
-        ;(
-          window as { __E2E_MOCK_DECRYPT_FILE__?: () => Promise<void> }
-        ).__E2E_MOCK_DECRYPT_FILE__ = () =>
-          new Promise(() => {
-            /* never resolves */
-          })
+        ;(window as { __E2E_MOCK_READ_DIR__?: (p: string) => MockEntry[] }).__E2E_MOCK_READ_DIR__ =
+          (path: string) => t[path] ?? []
+        ;(window as { __E2E_MOCK_DECRYPT_FILE__?: () => Promise<void> }).__E2E_MOCK_DECRYPT_FILE__ =
+          () =>
+            new Promise(() => {
+              /* never resolves */
+            })
       },
       { h: HOME, t: { [HOME]: HOME_ENTRIES } }
     )

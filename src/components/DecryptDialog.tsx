@@ -83,7 +83,9 @@ export default function DecryptDialog({ target, onClose, onSuccess }: DecryptDia
                 type={showPassphrase ? 'text' : 'password'}
                 value={passphrase}
                 onChange={(e) => setPassphrase((e.target as HTMLInputElement).value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !loading) handleDecrypt() }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !loading) handleDecrypt()
+                }}
                 className="pr-10 h-10"
                 autoComplete="current-password"
                 disabled={loading}
@@ -125,12 +127,7 @@ export default function DecryptDialog({ target, onClose, onSuccess }: DecryptDia
           <Button onClick={handleDecrypt} disabled={loading} className="order-last">
             Decrypt
           </Button>
-          <Button
-            variant="ghost"
-            onClick={onClose}
-            disabled={loading}
-            className="order-first"
-          >
+          <Button variant="ghost" onClick={onClose} disabled={loading} className="order-first">
             Cancel
           </Button>
         </DialogFooter>

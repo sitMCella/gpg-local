@@ -208,7 +208,10 @@ describe('EncryptDialog', () => {
     const { invokeEncryptFile } = await import('@/lib/platform')
     let resolveEncrypt!: () => void
     ;(invokeEncryptFile as ReturnType<typeof vi.fn>).mockImplementationOnce(
-      () => new Promise<void>((res) => { resolveEncrypt = res })
+      () =>
+        new Promise<void>((res) => {
+          resolveEncrypt = res
+        })
     )
 
     render(<EncryptDialog target={mockTarget} onClose={vi.fn()} onSuccess={vi.fn()} />)

@@ -34,11 +34,11 @@ Feature 04 delivered symmetric file encryption from the file browser. The natura
 
 ## Prerequisites
 
-| Requirement         | Notes                                                                                              |
-| ------------------- | -------------------------------------------------------------------------------------------------- |
-| Feature 02 complete | `decrypt_file` Tauri command and the sequoia-openpgp backend must be present                       |
-| Feature 03 complete | File browser dashboard, `FileList` component, and Shadcn + Tailwind v4 setup must be in place     |
-| Feature 04 complete | Mode tab bar, context menu infrastructure, `EncryptDialog` pattern, and Sonner toasts must exist  |
+| Requirement         | Notes                                                                                            |
+| ------------------- | ------------------------------------------------------------------------------------------------ |
+| Feature 02 complete | `decrypt_file` Tauri command and the sequoia-openpgp backend must be present                     |
+| Feature 03 complete | File browser dashboard, `FileList` component, and Shadcn + Tailwind v4 setup must be in place    |
+| Feature 04 complete | Mode tab bar, context menu infrastructure, `EncryptDialog` pattern, and Sonner toasts must exist |
 
 ---
 
@@ -80,12 +80,16 @@ Disabled rows in decrypt mode receive the same visual treatment as in encrypt mo
 The context menu in `FileList` already uses Shadcn `ContextMenu`. Extend it to render a **Decrypt file** item when the active mode is `decrypt` and the row is not disabled:
 
 ```tsx
-{mode === 'encrypt' && !disabled && (
-  <ContextMenuItem onSelect={() => onEncryptRequest(entry)}>Encrypt file</ContextMenuItem>
-)}
-{mode === 'decrypt' && !disabled && (
-  <ContextMenuItem onSelect={() => onDecryptRequest(entry)}>Decrypt file</ContextMenuItem>
-)}
+{
+  mode === 'encrypt' && !disabled && (
+    <ContextMenuItem onSelect={() => onEncryptRequest(entry)}>Encrypt file</ContextMenuItem>
+  )
+}
+{
+  mode === 'decrypt' && !disabled && (
+    <ContextMenuItem onSelect={() => onDecryptRequest(entry)}>Decrypt file</ContextMenuItem>
+  )
+}
 ```
 
 `onDecryptRequest` lifts the selected entry up to a piece of state that controls the decrypt dialog's visibility:
@@ -162,9 +166,9 @@ Layout:
 
 Validation rules (client-side, evaluated on submit):
 
-| Condition              | Error message                   |
-| ---------------------- | ------------------------------- |
-| Passphrase is empty    | "Passphrase must not be empty." |
+| Condition           | Error message                   |
+| ------------------- | ------------------------------- |
+| Passphrase is empty | "Passphrase must not be empty." |
 
 The passphrase field has a toggle button (`Eye` / `EyeOff` Lucide icons) to reveal the passphrase in plain text. It defaults to `type="password"`. The toggle button is excluded from the tab order (`tabIndex={-1}`).
 

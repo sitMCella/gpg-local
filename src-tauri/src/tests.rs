@@ -378,7 +378,10 @@ fn symmetric_encrypt_decrypt_roundtrip() {
 fn symmetric_wrong_passphrase_returns_error() {
     let ciphertext = encrypt_symmetric(b"secret", "correct_pass");
     let result = decrypt_bytes(&ciphertext, vec![], "wrong_pass");
-    assert!(result.is_err(), "expected Err with wrong symmetric passphrase");
+    assert!(
+        result.is_err(),
+        "expected Err with wrong symmetric passphrase"
+    );
 }
 
 /// Symmetrically-encrypted file round-trips correctly through the file system.
@@ -464,7 +467,10 @@ fn cert_to_info_user_ids_and_has_secret() {
         "expected UID to contain test@example.com, got: {:?}",
         info.user_ids
     );
-    assert!(info.has_secret, "generated cert must have secret key material");
+    assert!(
+        info.has_secret,
+        "generated cert must have secret key material"
+    );
 }
 
 /// cert_to_info has_secret is false when only the public half is stored.
@@ -474,7 +480,10 @@ fn cert_to_info_public_only_has_no_secret() {
     // Strip secret key material to get a public-only Cert.
     let public_cert = cert.strip_secret_key_material();
     let info = cert_to_info(&public_cert);
-    assert!(!info.has_secret, "public-only cert must not claim to have a secret");
+    assert!(
+        !info.has_secret,
+        "public-only cert must not claim to have a secret"
+    );
 }
 
 /// cert_to_info returns a non-zero created_at timestamp.
@@ -482,7 +491,10 @@ fn cert_to_info_public_only_has_no_secret() {
 fn cert_to_info_created_at_is_positive() {
     let cert = gen_cert("pass");
     let info = cert_to_info(&cert);
-    assert!(info.created_at > 0, "created_at should be a positive Unix timestamp");
+    assert!(
+        info.created_at > 0,
+        "created_at should be a positive Unix timestamp"
+    );
 }
 
 // ── Types serde ───────────────────────────────────────────────────────────────
@@ -563,5 +575,9 @@ fn keyring_store_same_cert_is_idempotent() {
     kr.store(&cert).unwrap();
     kr.store(&cert).unwrap(); // second store of identical cert
     let loaded = kr.load_all().unwrap();
-    assert_eq!(loaded.len(), 1, "duplicate store must not create two entries");
+    assert_eq!(
+        loaded.len(),
+        1,
+        "duplicate store must not create two entries"
+    );
 }
