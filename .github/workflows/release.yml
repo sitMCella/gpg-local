@@ -6,7 +6,33 @@ on:
       - main
 
 jobs:
+  validate-versions:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check version consistency
+        run: |
+          TAURI=$(jq -r '.version' src-tauri/tauri.conf.json)
+          PKG=$(jq -r '.version' package.json)
+          CARGO=$(grep '^version' src-tauri/Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+
+          echo "tauri.conf.json : $TAURI"
+          echo "package.json    : $PKG"
+          echo "Cargo.toml      : $CARGO"
+
+          if [ "$TAURI" != "$PKG" ] || [ "$TAURI" != "$CARGO" ]; then
+            echo ""
+            echo "Version mismatch — all three files must declare the same version before releasing."
+            exit 1
+          fi
+
+          echo ""
+          echo "All versions match: $TAURI"
+
   build:
+    needs: validate-versions
     permissions:
       contents: write
     strategy:
