@@ -9,7 +9,7 @@ fn open_keyring(app: &tauri::AppHandle) -> anyhow::Result<crate::keyring::Keyrin
     crate::keyring::Keyring::open(data_dir)
 }
 
-fn cert_to_info(cert: &Cert) -> KeyInfo {
+pub(crate) fn cert_to_info(cert: &Cert) -> KeyInfo {
     KeyInfo {
         fingerprint: cert.fingerprint().to_hex(),
         user_ids: cert
