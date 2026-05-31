@@ -50,4 +50,36 @@ describe('PathBreadcrumb', () => {
 
     expect(onNavigate).toHaveBeenCalledWith('/home')
   })
+
+  it('calls onNavigate when pressing Enter on an ancestor breadcrumb link', async () => {
+    const user = userEvent.setup()
+    const onNavigate = vi.fn()
+    render(<PathBreadcrumb path="/home/alice/Documents" onNavigate={onNavigate} />)
+
+    const aliceLink = screen.getByRole('link', { name: 'alice' })
+    aliceLink.focus()
+    await user.keyboard('{Enter}')
+
+    expect(onNavigate).toHaveBeenCalledWith('/home/alice')
+  })
+
+  it('renders a single-segment path as a non-clickable page element', () => {
+    render(<PathBreadcrumb path="/home" onNavigate={vi.fn()} />)
+
+    const page = screen.getByText('home')
+    expect(page.closest('a')).toBeNull()
+    expect(page).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('handles Windows paths with backslash separators', () => {
+    render(<PathBreadcrumb path="C:\\Users\\alice\\Documents" onNavigate={vi.fn()} />)
+
+    expect(screen.getByText('C:')).toBeInTheDocument()
+    expect(screen.getByText('Users')).toBeInTheDocument()
+    expect(screen.getByText('alice')).toBeInTheDocument()
+    expect(screen.getByText('Documents')).toBeInTheDocument()
+    // Last segment is the non-clickable page
+    const page = screen.getByText('Documents')
+    expect(page.closest('a')).toBeNull()
+  })
 })
