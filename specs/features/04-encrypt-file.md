@@ -382,7 +382,7 @@ src-tauri/
 - **Passphrases are never persisted.** They exist only in React component state for the lifetime of the dialog and as a string argument to the Tauri command. They are cleared when the dialog closes.
 - **No passphrase strength enforcement** beyond the 8-character minimum in this feature. A follow-up may add entropy estimation (e.g., zxcvbn).
 - **The original file is not deleted.** The user retains the plaintext file. Secure deletion of the source is a separate, opt-in action.
-- **Output path is deterministic** (`<input>.gpg`). If a file with that name already exists, the Tauri command will overwrite it. The dialog displays the output filename so the user is informed before confirming.
+- **Output path is deterministic** (`<input>.gpg`). If a file with that name already exists it is **silently overwritten** — the Tauri command uses `std::fs::write`, which truncates and replaces any existing file without prompting. The dialog always displays the computed output filename (e.g. `report.md.gpg (same folder)`) so the user can see what will be written before clicking **Encrypt**. A future enhancement may add an explicit overwrite-confirmation step when the output file already exists.
 
 ---
 
@@ -397,6 +397,7 @@ src-tauri/
 - [ ] Submitting with mismatched passphrase fields shows the mismatch error.
 - [ ] Eye-toggle buttons reveal/hide each passphrase field independently.
 - [ ] A successful encryption creates a `.gpg` file in the same directory, refreshes the file list, and shows a success toast.
+- [ ] If a `.gpg` file with the same name already exists it is silently overwritten; no additional confirmation prompt is shown.
 - [ ] The new `.gpg` file appears greyed out in the refreshed file list (encrypt mode).
 - [ ] A backend error (e.g., insufficient write permissions) is surfaced inside the dialog as an inline error without crashing the app.
 - [ ] All existing `pnpm test` (Vitest) and `pnpm test:e2e` (Playwright) suites continue to pass.
