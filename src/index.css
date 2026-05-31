@@ -29,6 +29,13 @@
   --radius: 0.375rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
+
+  --animate-indeterminate: indeterminate-slide 1.4s ease-in-out infinite;
+}
+
+@keyframes indeterminate-slide {
+  0% { transform: translateX(-150%); }
+  100% { transform: translateX(350%); }
 }
 
 * {

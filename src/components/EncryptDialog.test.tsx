@@ -189,7 +189,7 @@ describe('EncryptDialog', () => {
     expect(screen.getByLabelText(/confirm passphrase/i)).toHaveValue('')
   })
 
-  it('Encrypt button is disabled while loading', async () => {
+  it('Encrypt button is disabled and progress bar is shown while loading', async () => {
     const user = userEvent.setup()
     // Make the invoke hang so we can observe the loading state
     const { invokeEncryptFile } = await import('@/lib/platform')
@@ -206,10 +206,10 @@ describe('EncryptDialog', () => {
 
     await user.click(screen.getByRole('button', { name: /^encrypt$/i }))
 
-    // After click, the button should be disabled (shows spinner)
     await waitFor(() => {
-      const encryptBtn = screen.getByRole('button', { name: /encrypting/i })
-      expect(encryptBtn).toBeDisabled()
+      expect(screen.getByRole('button', { name: /^encrypt$/i })).toBeDisabled()
+      expect(screen.getByRole('progressbar')).toBeInTheDocument()
+      expect(screen.getByText(/encrypting file, please wait/i)).toBeInTheDocument()
     })
   })
 })
