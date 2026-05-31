@@ -410,7 +410,8 @@ export default function App() {
 
       {/* Body — resizable split */}
       <ResizablePanelGroup direction="horizontal" className="flex-1 overflow-hidden">
-        <ResizablePanel defaultSize={25} minSize={15} maxSize={50} className="bg-sidebar text-sidebar-foreground">
+        {/* defaultSize is a percentage; targets ~200 px on a 1024 px window */}
+        <ResizablePanel defaultSize={25} minSize={15} maxSize={50} style={{ width: '200px', maxWidth: '400px' }} className="bg-sidebar text-sidebar-foreground">
           {rootPath && (
             <FolderTree
               rootPath={rootPath}
@@ -555,7 +556,7 @@ src/
 - [ ] Clicking a folder in the sidebar expands it and populates the right panel with its contents.
 - [ ] The breadcrumb in the toolbar reflects the selected folder; clicking a segment navigates to it.
 - [ ] The "Open folder" button opens a native directory picker and re-roots both panels to the chosen directory.
-- [ ] The sidebar panel can be resized by dragging the divider handle between min 15% and max 50% of window width.
+- [ ] The sidebar panel opens at a default width of 200 px and can be resized by dragging the divider handle between min 15% and max 50% of window width, with an absolute upper cap of 400 px on screens wide enough to accommodate it.
 - [ ] Files with `.gpg` or `.pgp` extensions display the `Lock` icon in the file list.
 - [ ] Navigating to a directory with no readable contents shows the empty-state message, not a crash.
 - [ ] Attempting to expand a directory with insufficient permissions shows an inline error without crashing the app.
