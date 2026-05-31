@@ -168,6 +168,8 @@ Validation rules (client-side, evaluated on submit):
 
 The passphrase field has a toggle button (`Eye` / `EyeOff` Lucide icons) to reveal the passphrase in plain text. It defaults to `type="password"`. The toggle button is excluded from the tab order (`tabIndex={-1}`).
 
+Pressing **Enter** in the passphrase field submits the form — equivalent to clicking the **Decrypt** button. The key handler is a no-op while `loading` is true.
+
 While `loading` is true, the **Decrypt** and **Cancel** buttons are disabled, and an indeterminate progress bar appears above the footer together with the status text "Decrypting file, please wait…". The Decrypt button label does not change.
 
 State is reset (passphrase cleared, error cleared, loading false, showPassphrase false) every time the dialog opens (i.e. when `target` transitions from `null` to a non-null value) using a `useEffect` on `target`.
@@ -234,6 +236,7 @@ No new permissions are required. The `fs:allow-read-file` and `fs:allow-write-fi
 - Does **not** show a confirmation field (only one passphrase input is rendered).
 - While loading, the Decrypt and Cancel buttons are disabled, an indeterminate progress bar is visible, and the status text "Decrypting file, please wait…" is shown. The Decrypt button label does not change.
 - Toggles passphrase visibility when the eye icon is clicked.
+- Pressing Enter in the passphrase field triggers decryption (same as clicking Decrypt); no-op while loading.
 - Calls `onClose` when Cancel is clicked.
 - After a failed invoke, the inline error message is rendered and the dialog remains open.
 - Passphrase field and error are cleared when `target` changes from null to a new entry (dialog re-opens).
@@ -387,6 +390,7 @@ Loading state (after Decrypt is clicked):
 - [ ] The decrypt dialog displays the source filename and the computed output filename.
 - [ ] Submitting with an empty passphrase shows the "Passphrase must not be empty." error inline without closing the dialog.
 - [ ] The eye-toggle button reveals and hides the passphrase field.
+- [ ] Pressing Enter in the passphrase field triggers decryption (equivalent to clicking Decrypt); no-op while loading.
 - [ ] While decryption is in progress, both buttons are disabled, the indeterminate bar is visible, and the status text "Decrypting file, please wait…" is shown.
 - [ ] A successful decryption creates the plaintext file in the same directory, refreshes the file list, and shows a success toast.
 - [ ] The newly created plaintext file appears greyed out in the refreshed file list (decrypt mode does not apply to it).

@@ -92,6 +92,7 @@ export default function DecryptDialog({ target, onClose, onSuccess }: DecryptDia
                 type={showPassphrase ? 'text' : 'password'}
                 value={passphrase}
                 onChange={(e) => setPassphrase((e.target as HTMLInputElement).value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !loading) handleDecrypt() }}
                 className="pr-10 h-10"
                 autoComplete="current-password"
                 disabled={loading}
