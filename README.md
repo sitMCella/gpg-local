@@ -5,26 +5,9 @@ GPG Local is a desktop application that provides a GUI for encrypting and decryp
 ## Architecture
 
 ```
-gpg-local/
-├── src/
-│   ├── main.tsx          # Application entry point — mounts React root
-│   ├── App.tsx           # Root component
-│   ├── App.css           # Root component styles
-│   ├── index.css         # Global styles
-│   ├── assets/           # Static assets (images, SVGs)
-│   └── test/
-│       └── setup.ts      # Vitest global test setup
-├── e2e/
-│   └── app.spec.ts       # Playwright end-to-end tests
-├── public/               # Static files served as-is (favicon, icon sprites)
-├── dist/                 # Production build output (generated)
-├── index.html            # HTML entry point
-├── vite.config.ts        # Vite + Vitest configuration
-├── playwright.config.ts  # Playwright configuration
-├── tsconfig.json         # TypeScript project references root
-├── tsconfig.app.json     # TypeScript config for application source
-├── tsconfig.node.json    # TypeScript config for build tooling (vite.config.ts)
-└── eslint.config.js      # ESLint configuration
+src/           React + TypeScript UI (Vite bundled)
+e2e/           Playwright end-to-end tests (run against Vite dev server)
+public/        Static assets served as-is (SVG icon sprite)
 ```
 
 **Stack:**

@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+@specs/features/01-tauri-wrapper.md
+
 ## Project motivation
 
 GPG Local is a desktop application that provides a graphical interface for encrypting and decrypting local files using GPG. The goal is to make GPG key management and file operations accessible without requiring command-line knowledge, distributed as a native desktop binary on Windows, macOS, and Linux.
@@ -11,9 +13,26 @@ The planned delivery mechanism is **Tauri 2** (see `01-tauri-wrapper.md`): a Rus
 ## Architecture
 
 ```
-src/           React + TypeScript UI (Vite bundled)
-e2e/           Playwright end-to-end tests (run against Vite dev server)
-public/        Static assets served as-is (SVG icon sprite)
+gpg-local/
+├── src/
+│   ├── main.tsx          # Application entry point — mounts React root
+│   ├── App.tsx           # Root component
+│   ├── App.css           # Root component styles
+│   ├── index.css         # Global styles
+│   ├── assets/           # Static assets (images, SVGs)
+│   └── test/
+│       └── setup.ts      # Vitest global test setup
+├── e2e/
+│   └── app.spec.ts       # Playwright end-to-end tests
+├── public/               # Static files served as-is (favicon, icon sprites)
+├── dist/                 # Production build output (generated)
+├── index.html            # HTML entry point
+├── vite.config.ts        # Vite + Vitest configuration
+├── playwright.config.ts  # Playwright configuration
+├── tsconfig.json         # TypeScript project references root
+├── tsconfig.app.json     # TypeScript config for application source
+├── tsconfig.node.json    # TypeScript config for build tooling (vite.config.ts)
+└── eslint.config.js      # ESLint configuration
 ```
 
 The application is a standard Vite + React 19 SPA. `src/main.tsx` mounts the React root; `src/App.tsx` is the root component. There is no router or state management library yet — the component tree is flat at this stage.
