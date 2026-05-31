@@ -163,12 +163,10 @@ export default function FolderTree({
 
   useEffect(() => {
     const newRoot = buildRootNode(rootPath)
-    setRoot(newRoot)
-    // Auto-expand root
     loadChildren(newRoot, showHidden).then((children) => {
-      setRoot((prev) => ({ ...prev, children, expanded: true }))
+      setRoot({ ...newRoot, children, expanded: true })
     }).catch(() => {
-      setRoot((prev) => ({ ...prev, children: [], expanded: true }))
+      setRoot({ ...newRoot, children: [], expanded: true })
     })
   }, [rootPath, showHidden])
 

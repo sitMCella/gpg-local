@@ -1,7 +1,7 @@
 import { Input as InputPrimitive } from '@base-ui/react/input'
 import { cn } from '@/lib/utils'
 
-export interface InputProps extends InputPrimitive.Props {}
+export type InputProps = InputPrimitive.Props
 
 function Input({ className, ...props }: InputProps) {
   return (

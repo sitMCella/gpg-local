@@ -2,7 +2,7 @@ import { Toast as ToastPrimitive } from '@base-ui/react/toast'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-// Singleton manager — call toast.add() from anywhere in the app
+// eslint-disable-next-line react-refresh/only-export-components
 export const toast = ToastPrimitive.createToastManager()
 
 function ToastList() {
