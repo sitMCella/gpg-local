@@ -307,7 +307,6 @@ describe('FileList', () => {
   // ---- Feature 06 additions ----
 
   it('re-reads the directory when refreshKey increments', async () => {
-    const user = userEvent.setup()
     const { readDirectory } = await import('@/lib/platform')
     const mock = readDirectory as ReturnType<typeof vi.fn>
     mock.mockResolvedValue([{ name: 'file.txt', isDirectory: false, isSymlink: false }])
