@@ -70,4 +70,28 @@ describe('useDirectory', () => {
     expect(result.current.error).toContain('Permission denied')
     expect(result.current.entries).toHaveLength(0)
   })
+
+  it('sets loading to true while reading and false after completion', async () => {
+    let resolve!: (v: unknown[]) => void
+    mockReadDirectory.mockImplementation(() => new Promise((r) => { resolve = r }))
+
+    const { result } = renderHook(() => useDirectory())
+
+    act(() => { result.current.read('/slow') })
+    expect(result.current.loading).toBe(true)
+
+    await act(async () => { resolve([]) })
+    expect(result.current.loading).toBe(false)
+  })
+
+  it('constructs each entry path as parent-path/name', async () => {
+    mockReadDirectory.mockResolvedValue([
+      { name: 'report.txt', isDirectory: false, isSymlink: false },
+    ])
+
+    const { result } = renderHook(() => useDirectory())
+    await act(() => result.current.read('/parent'))
+
+    expect(result.current.entries[0].path).toBe('/parent/report.txt')
+  })
 })
