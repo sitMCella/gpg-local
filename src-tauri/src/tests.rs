@@ -1,6 +1,7 @@
 use sequoia_openpgp::{
     armor::{Kind, Writer as ArmorWriter},
     cert::CertBuilder,
+    crypto::Password,
     parse::{stream::DecryptorBuilder, Parse},
     policy::StandardPolicy,
     serialize::{
@@ -11,7 +12,7 @@ use sequoia_openpgp::{
 use std::io::Write;
 use tempfile::tempdir;
 
-use crate::{helpers::KeyringHelper, keyring::Keyring};
+use crate::{commands::cert_to_info, helpers::KeyringHelper, keyring::Keyring};
 
 /// Generate a fresh cert with one encryption subkey locked by `passphrase`.
 fn gen_cert(passphrase: &str) -> sequoia_openpgp::Cert {
@@ -339,4 +340,228 @@ fn decrypt_with_no_matching_key_returns_error() {
     let other_cert = gen_cert("other_pass");
     let result = decrypt_bytes(&ciphertext, vec![other_cert], "other_pass");
     assert!(result.is_err(), "expected Err when no matching key");
+}
+
+// ── Symmetric passphrase encryption ───────────────────────────────────────────
+
+/// Encrypt `plaintext` symmetrically (SKESK, no recipients) and return
+/// the binary OpenPGP message. Mirrors the path in `commands::encrypt_file`
+/// when `recipient_fingerprints` is empty and `passphrase` is `Some`.
+fn encrypt_symmetric(plaintext: &[u8], passphrase: &str) -> Vec<u8> {
+    let mut output = Vec::new();
+    let msg = Message::new(&mut output);
+    let recipients: Vec<sequoia_openpgp::serialize::stream::Recipient<'_>> = vec![];
+    let msg = Encryptor2::for_recipients(msg, recipients)
+        .add_passwords([Password::from(passphrase)])
+        .build()
+        .unwrap();
+    let mut msg = LiteralWriter::new(msg).build().unwrap();
+    msg.write_all(plaintext).unwrap();
+    msg.finalize().unwrap();
+    output
+}
+
+/// Feature 04 core path: symmetric-only encryption round-trips via SKESK.
+#[test]
+fn symmetric_encrypt_decrypt_roundtrip() {
+    let passphrase = "mysecretpass";
+    let original = b"Symmetric payload";
+
+    let ciphertext = encrypt_symmetric(original, passphrase);
+    // No certs needed for symmetric decryption — the SKESK carries the session key.
+    let decrypted = decrypt_bytes(&ciphertext, vec![], passphrase).unwrap();
+    assert_eq!(decrypted, original);
+}
+
+/// Wrong passphrase for a symmetrically-encrypted message returns an error.
+#[test]
+fn symmetric_wrong_passphrase_returns_error() {
+    let ciphertext = encrypt_symmetric(b"secret", "correct_pass");
+    let result = decrypt_bytes(&ciphertext, vec![], "wrong_pass");
+    assert!(result.is_err(), "expected Err with wrong symmetric passphrase");
+}
+
+/// Symmetrically-encrypted file round-trips correctly through the file system.
+#[test]
+fn symmetric_encrypt_decrypt_files() {
+    let dir = tempdir().unwrap();
+    let passphrase = "filepassword";
+    let original = b"File content encrypted symmetrically";
+
+    let input_path = dir.path().join("plain.txt");
+    let encrypted_path = dir.path().join("plain.txt.gpg");
+    let decrypted_path = dir.path().join("plain.dec.txt");
+    std::fs::write(&input_path, original).unwrap();
+
+    let ciphertext = encrypt_symmetric(&std::fs::read(&input_path).unwrap(), passphrase);
+    std::fs::write(&encrypted_path, &ciphertext).unwrap();
+
+    let decrypted = decrypt_bytes(&ciphertext, vec![], passphrase).unwrap();
+    std::fs::write(&decrypted_path, &decrypted).unwrap();
+
+    assert_eq!(std::fs::read(&decrypted_path).unwrap(), original);
+}
+
+/// Mixed encryption: session key wrapped for both a recipient key and a symmetric
+/// passphrase. Both methods must independently decrypt the same message.
+#[test]
+fn mixed_symmetric_and_recipient_both_decrypt() {
+    let passphrase = "shared_pass";
+    let cert = gen_cert("key_pass");
+    let original = b"Mixed encryption payload";
+
+    // Encrypt to cert AND with symmetric passphrase.
+    let policy = StandardPolicy::new();
+    let keys: Vec<_> = cert
+        .keys()
+        .with_policy(&policy, None)
+        .supported()
+        .alive()
+        .revoked(false)
+        .for_transport_encryption()
+        .collect();
+
+    let mut output = Vec::new();
+    let msg = Message::new(&mut output);
+    let msg = Encryptor2::for_recipients(msg, keys)
+        .add_passwords([Password::from(passphrase)])
+        .build()
+        .unwrap();
+    let mut msg = LiteralWriter::new(msg).build().unwrap();
+    msg.write_all(original).unwrap();
+    msg.finalize().unwrap();
+    let ciphertext = output;
+
+    // Passphrase-only decryption (no certs supplied) succeeds via SKESK.
+    let dec_sym = decrypt_bytes(&ciphertext, vec![], passphrase).unwrap();
+    assert_eq!(dec_sym, original);
+
+    // Key-based decryption (correct cert + key passphrase) succeeds via PKESK.
+    let dec_key = decrypt_bytes(&ciphertext, vec![cert], "key_pass").unwrap();
+    assert_eq!(dec_key, original);
+}
+
+// ── cert_to_info ──────────────────────────────────────────────────────────────
+
+/// cert_to_info extracts the fingerprint as an uppercase hex string.
+#[test]
+fn cert_to_info_fingerprint() {
+    let cert = gen_cert("pass");
+    let info = cert_to_info(&cert);
+    assert_eq!(info.fingerprint, cert.fingerprint().to_hex());
+    assert!(!info.fingerprint.is_empty());
+}
+
+/// cert_to_info includes at least the UID we set and marks the cert as having a secret.
+#[test]
+fn cert_to_info_user_ids_and_has_secret() {
+    let cert = gen_cert("pass");
+    let info = cert_to_info(&cert);
+    assert!(
+        info.user_ids
+            .iter()
+            .any(|uid| uid.contains("test@example.com")),
+        "expected UID to contain test@example.com, got: {:?}",
+        info.user_ids
+    );
+    assert!(info.has_secret, "generated cert must have secret key material");
+}
+
+/// cert_to_info has_secret is false when only the public half is stored.
+#[test]
+fn cert_to_info_public_only_has_no_secret() {
+    let cert = gen_cert("pass");
+    // Strip secret key material to get a public-only Cert.
+    let public_cert = cert.strip_secret_key_material();
+    let info = cert_to_info(&public_cert);
+    assert!(!info.has_secret, "public-only cert must not claim to have a secret");
+}
+
+/// cert_to_info returns a non-zero created_at timestamp.
+#[test]
+fn cert_to_info_created_at_is_positive() {
+    let cert = gen_cert("pass");
+    let info = cert_to_info(&cert);
+    assert!(info.created_at > 0, "created_at should be a positive Unix timestamp");
+}
+
+// ── Types serde ───────────────────────────────────────────────────────────────
+
+use crate::types::{DecryptOptions, EncryptOptions, KeyInfo};
+
+/// KeyInfo serialises to JSON and deserialises back to the same value.
+#[test]
+fn key_info_serde_roundtrip() {
+    let info = KeyInfo {
+        fingerprint: "AABBCCDD".to_string(),
+        user_ids: vec!["Alice <alice@example.com>".to_string()],
+        has_secret: true,
+        created_at: 1_700_000_000,
+    };
+    let json = serde_json::to_string(&info).unwrap();
+    let back: KeyInfo = serde_json::from_str(&json).unwrap();
+    assert_eq!(back.fingerprint, info.fingerprint);
+    assert_eq!(back.user_ids, info.user_ids);
+    assert_eq!(back.has_secret, info.has_secret);
+    assert_eq!(back.created_at, info.created_at);
+}
+
+/// EncryptOptions with an optional passphrase round-trips through JSON.
+#[test]
+fn encrypt_options_serde_roundtrip() {
+    let opts = EncryptOptions {
+        input_path: "/tmp/plain.txt".to_string(),
+        output_path: "/tmp/plain.txt.gpg".to_string(),
+        recipient_fingerprints: vec!["FP1".to_string(), "FP2".to_string()],
+        passphrase: Some("hunter2".to_string()),
+    };
+    let json = serde_json::to_string(&opts).unwrap();
+    let back: EncryptOptions = serde_json::from_str(&json).unwrap();
+    assert_eq!(back.input_path, opts.input_path);
+    assert_eq!(back.output_path, opts.output_path);
+    assert_eq!(back.recipient_fingerprints, opts.recipient_fingerprints);
+    assert_eq!(back.passphrase, opts.passphrase);
+}
+
+/// EncryptOptions with passphrase=None also round-trips correctly.
+#[test]
+fn encrypt_options_no_passphrase_serde() {
+    let opts = EncryptOptions {
+        input_path: "/tmp/a".to_string(),
+        output_path: "/tmp/a.gpg".to_string(),
+        recipient_fingerprints: vec![],
+        passphrase: None,
+    };
+    let json = serde_json::to_string(&opts).unwrap();
+    let back: EncryptOptions = serde_json::from_str(&json).unwrap();
+    assert!(back.passphrase.is_none());
+}
+
+/// DecryptOptions serialises and deserialises correctly.
+#[test]
+fn decrypt_options_serde_roundtrip() {
+    let opts = DecryptOptions {
+        input_path: "/tmp/plain.txt.gpg".to_string(),
+        output_path: "/tmp/plain.txt".to_string(),
+        passphrase: "mypass".to_string(),
+    };
+    let json = serde_json::to_string(&opts).unwrap();
+    let back: DecryptOptions = serde_json::from_str(&json).unwrap();
+    assert_eq!(back.input_path, opts.input_path);
+    assert_eq!(back.output_path, opts.output_path);
+    assert_eq!(back.passphrase, opts.passphrase);
+}
+
+// ── Keyring idempotency ───────────────────────────────────────────────────────
+
+/// Storing the same cert twice does not create duplicate entries.
+#[test]
+fn keyring_store_same_cert_is_idempotent() {
+    let dir = tempdir().unwrap();
+    let cert = gen_cert("pass");
+    let kr = Keyring::open(dir.path().to_path_buf()).unwrap();
+    kr.store(&cert).unwrap();
+    kr.store(&cert).unwrap(); // second store of identical cert
+    let loaded = kr.load_all().unwrap();
+    assert_eq!(loaded.len(), 1, "duplicate store must not create two entries");
 }
