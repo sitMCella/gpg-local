@@ -136,6 +136,7 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
                 type={showConfirm ? 'text' : 'password'}
                 value={confirm}
                 onChange={(e) => setConfirm((e.target as HTMLInputElement).value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !loading) handleEncrypt() }}
                 className="pr-10 h-10"
                 autoComplete="new-password"
                 disabled={loading}

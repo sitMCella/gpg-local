@@ -199,6 +199,8 @@ Validation rules (client-side, evaluated on submit):
 
 Each field has a toggle button (`Eye` / `EyeOff` Lucide icons) to reveal the passphrase in plain text. Both fields default to `type="password"`. The toggle buttons are excluded from the tab order (`tabIndex={-1}`).
 
+Pressing **Enter** in the **Confirm passphrase** field submits the form — equivalent to clicking the **Encrypt** button. The key handler is a no-op while `loading` is true.
+
 While `loading` is true, the **Encrypt** and **Cancel** buttons are disabled and an indeterminate progress bar appears above the footer together with the status text "Encrypting file, please wait…". The Encrypt button label does not change. The progress bar is an animated sliding fill (`animate-indeterminate`, defined in `index.css`) because no real progress percentage is available from the one-shot Tauri command.
 
 ### 5. Invoke the Tauri command
@@ -288,6 +290,7 @@ No new permissions are required beyond those added in features 02 and 03 (`fs:al
 - Shows "Passphrases do not match." when the two fields differ.
 - While loading, the Encrypt and Cancel buttons are disabled, an indeterminate progress bar is visible, and the status text "Encrypting file, please wait…" is shown. The Encrypt button label does not change.
 - Toggles passphrase visibility when the eye icon is clicked.
+- Pressing Enter in the Confirm passphrase field triggers encryption (same as clicking Encrypt).
 - Calls `onClose` when Cancel is clicked.
 
 **`src/components/FileList.test.tsx`** (additions)
@@ -422,6 +425,7 @@ Loading state (after Encrypt is clicked):
 - [ ] Submitting with a passphrase shorter than 8 characters shows the length error.
 - [ ] Submitting with mismatched passphrase fields shows the mismatch error.
 - [ ] Eye-toggle buttons reveal/hide each passphrase field independently.
+- [ ] Pressing Enter in the Confirm passphrase field triggers encryption (equivalent to clicking Encrypt); no-op while loading.
 - [ ] A successful encryption creates a `.gpg` file in the same directory, refreshes the file list, and shows a success toast.
 - [ ] If a `.gpg` file with the same name already exists it is silently overwritten; no additional confirmation prompt is shown.
 - [ ] The new `.gpg` file appears greyed out in the refreshed file list (encrypt mode).
