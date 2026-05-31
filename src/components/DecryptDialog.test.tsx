@@ -202,4 +202,25 @@ describe('DecryptDialog', () => {
 
     expect(onClose).toHaveBeenCalled()
   })
+
+  it('resets showPassphrase to false when dialog reopens with a new target', async () => {
+    const user = userEvent.setup()
+
+    function Wrapper({ target }: { target: typeof mockTarget | null }) {
+      return <DecryptDialog target={target} onClose={vi.fn()} onSuccess={vi.fn()} />
+    }
+
+    const { rerender } = render(<Wrapper target={mockTarget} />)
+
+    // Reveal the passphrase
+    await user.click(screen.getByRole('button', { name: /show passphrase/i }))
+    expect(screen.getByLabelText(/^passphrase$/i)).toHaveAttribute('type', 'text')
+
+    // Close and reopen the dialog
+    rerender(<Wrapper target={null} />)
+    rerender(<Wrapper target={mockTarget} />)
+
+    // Passphrase field should be hidden again after reopening
+    expect(screen.getByLabelText(/^passphrase$/i)).toHaveAttribute('type', 'password')
+  })
 })
