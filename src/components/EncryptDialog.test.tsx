@@ -189,6 +189,45 @@ describe('EncryptDialog', () => {
     expect(screen.getByLabelText(/confirm passphrase/i)).toHaveValue('')
   })
 
+  it('pressing Enter in the Confirm passphrase field triggers encryption', async () => {
+    const user = userEvent.setup()
+    const onSuccess = vi.fn()
+    render(<EncryptDialog target={mockTarget} onClose={vi.fn()} onSuccess={onSuccess} />)
+
+    await user.type(screen.getByLabelText(/^passphrase$/i), 'securepassword')
+    await user.type(screen.getByLabelText(/confirm passphrase/i), 'securepassword')
+    await user.keyboard('{Enter}')
+
+    await waitFor(() => {
+      expect(onSuccess).toHaveBeenCalledWith('/home/user/report.md.gpg')
+    })
+  })
+
+  it('pressing Enter in the Confirm passphrase field is a no-op while loading', async () => {
+    const user = userEvent.setup()
+    const { invokeEncryptFile } = await import('@/lib/platform')
+    let resolveEncrypt!: () => void
+    ;(invokeEncryptFile as ReturnType<typeof vi.fn>).mockImplementationOnce(
+      () => new Promise<void>((res) => { resolveEncrypt = res })
+    )
+
+    render(<EncryptDialog target={mockTarget} onClose={vi.fn()} onSuccess={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^passphrase$/i), 'securepassword')
+    await user.type(screen.getByLabelText(/confirm passphrase/i), 'securepassword')
+
+    // Trigger loading via the Encrypt button
+    await user.click(screen.getByRole('button', { name: /^encrypt$/i }))
+    await waitFor(() => expect(screen.getByRole('progressbar')).toBeInTheDocument())
+
+    // Pressing Enter again while loading should not call invokeEncryptFile a second time
+    await user.keyboard('{Enter}')
+    // Still only one call
+    expect(invokeEncryptFile).toHaveBeenCalledTimes(1)
+
+    resolveEncrypt()
+  })
+
   it('Encrypt button is disabled and progress bar is shown while loading', async () => {
     const user = userEvent.setup()
     // Make the invoke hang so we can observe the loading state
