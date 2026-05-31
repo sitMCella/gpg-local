@@ -1,7 +1,6 @@
 import { ChevronDown, ChevronRight, Folder, FolderOpen, Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { readDirectory } from '@/lib/platform'
 import type { TreeNode } from '@/types/fs'
@@ -127,10 +126,7 @@ function FolderTreeNode({ node, depth, selectedPath, showHidden, onSelect, onUpd
         ) : (
           <Folder className="size-4 shrink-0 text-muted-foreground" />
         )}
-        <Tooltip>
-          <TooltipTrigger render={<span className="truncate" />}>{node.name}</TooltipTrigger>
-          <TooltipContent>{node.name}</TooltipContent>
-        </Tooltip>
+        <span className="truncate">{node.name}</span>
       </div>
       {node.expanded && node.children && node.children.length > 0 && (
         <div role="group">
