@@ -56,6 +56,7 @@ pnpm install
 | `pnpm build:tauri`   | Web build + compile Rust + produce platform installers in `src-tauri/target/release/bundle/` |
 | `pnpm preview`       | Serve the production web build locally                                                       |
 | `pnpm lint`          | Run ESLint across all source files                                                           |
+| `pnpm format`        | Format all source files with Prettier                                                        |
 | `pnpm test`          | Run unit tests in watch mode (Vitest)                                                        |
 | `pnpm test:ui`       | Open the Vitest browser UI                                                                   |
 | `pnpm test:coverage` | Run unit tests and generate a coverage report                                                |

@@ -18,7 +18,17 @@ export default function App() {
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
   const [mode, setMode] = useState<AppMode>('encrypt')
   const [encryptTarget, setEncryptTarget] = useState<FsEntry | null>(null)
-  const [fileListKey, setFileListKey] = useState(0)
+  const [fileListRefreshKey, setFileListRefreshKey] = useState(0)
+
+  function refreshFileList() {
+    setFileListRefreshKey((k) => k + 1)
+  }
+
+  function handleSidebarRefreshRequest(path: string) {
+    if (path === selectedPath) {
+      refreshFileList()
+    }
+  }
 
   useEffect(() => {
     getHomeDir().then((home) => {
@@ -43,9 +53,7 @@ export default function App() {
 
   function handleEncryptSuccess(outputPath: string) {
     setEncryptTarget(null)
-    // Refresh the file list by bumping the key
-    setFileListKey((k) => k + 1)
-    // Show success toast
+    refreshFileList()
     const outputName = outputPath.split('/').pop() ?? outputPath
     const inputName = outputName.replace(/\.gpg$/, '')
     toast.add({
@@ -97,7 +105,7 @@ export default function App() {
         </header>
 
         {/* Mode tab bar */}
-        <ModeTabBar mode={mode} onModeChange={setMode} />
+        <ModeTabBar mode={mode} onModeChange={setMode} onRefresh={refreshFileList} />
 
         {/* Body — resizable split */}
         <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden">
@@ -113,6 +121,7 @@ export default function App() {
                 rootPath={rootPath}
                 selectedPath={selectedPath}
                 onSelect={setSelectedPath}
+                onRefreshRequest={handleSidebarRefreshRequest}
               />
             )}
           </ResizablePanel>
@@ -121,9 +130,9 @@ export default function App() {
 
           <ResizablePanel>
             <FileList
-              key={fileListKey}
               dirPath={selectedPath}
               mode={mode}
+              refreshKey={fileListRefreshKey}
               onNavigate={setSelectedPath}
               onEncryptRequest={setEncryptTarget}
             />

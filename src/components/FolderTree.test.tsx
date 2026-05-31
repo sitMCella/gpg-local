@@ -103,4 +103,73 @@ describe('FolderTree', () => {
     await user.keyboard('{ArrowRight}')
     expect(root).toHaveAttribute('aria-expanded', 'true')
   })
+
+  it('right-clicking a folder node opens a context menu with a Reload item', async () => {
+    const user = userEvent.setup()
+    renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect: vi.fn() })
+    const root = await screen.findByRole('treeitem', { name: /alice/ })
+    await user.pointer({ keys: '[MouseRight]', target: root })
+    expect(await screen.findByRole('menuitem', { name: /reload/i })).toBeInTheDocument()
+  })
+
+  it('clicking Reload calls onRefreshRequest with the node path', async () => {
+    const user = userEvent.setup()
+    const onRefreshRequest = vi.fn()
+    renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect: vi.fn(), onRefreshRequest })
+    const root = await screen.findByRole('treeitem', { name: /alice/ })
+    await user.pointer({ keys: '[MouseRight]', target: root })
+    const reloadItem = await screen.findByRole('menuitem', { name: /reload/i })
+    await user.click(reloadItem)
+    await waitFor(() => expect(onRefreshRequest).toHaveBeenCalledWith('/home/alice'))
+  })
+
+  it('after Reload is triggered, the node children are re-fetched', async () => {
+    const user = userEvent.setup()
+    mockReadDirectory
+      .mockResolvedValueOnce([{ name: 'OldFolder', isDirectory: true, isSymlink: false }])
+      .mockResolvedValueOnce([{ name: 'NewFolder', isDirectory: true, isSymlink: false }])
+    renderTree({
+      rootPath: '/home/alice',
+      selectedPath: null,
+      onSelect: vi.fn(),
+      onRefreshRequest: vi.fn(),
+    })
+    expect(await screen.findByText('OldFolder')).toBeInTheDocument()
+    const root = screen.getByRole('treeitem', { name: /alice/ })
+    await user.pointer({ keys: '[MouseRight]', target: root })
+    const reloadItem = await screen.findByRole('menuitem', { name: /reload/i })
+    await user.click(reloadItem)
+    expect(await screen.findByText('NewFolder')).toBeInTheDocument()
+    expect(screen.queryByText('OldFolder')).not.toBeInTheDocument()
+  })
+
+  it('shows Loader2 spinner on the reloaded node while reload is in progress', async () => {
+    const user = userEvent.setup()
+    // First call resolves immediately; second (reload) never resolves so we can inspect loading state
+    let resolveReload!: () => void
+    const reloadPromise = new Promise<{ name: string; isDirectory: boolean; isSymlink: boolean }[]>(
+      (resolve) => {
+        resolveReload = () => resolve([])
+      }
+    )
+    mockReadDirectory.mockResolvedValueOnce([]).mockReturnValueOnce(reloadPromise)
+
+    renderTree({
+      rootPath: '/home/alice',
+      selectedPath: null,
+      onSelect: vi.fn(),
+      onRefreshRequest: vi.fn(),
+    })
+    const root = await screen.findByRole('treeitem', { name: /alice/ })
+    await user.pointer({ keys: '[MouseRight]', target: root })
+    const reloadItem = await screen.findByRole('menuitem', { name: /reload/i })
+    await user.click(reloadItem)
+
+    // Spinner should be visible while loading
+    await waitFor(() => expect(root.querySelector('svg.animate-spin')).toBeInTheDocument())
+
+    // Let the reload finish and spinner should disappear
+    resolveReload()
+    await waitFor(() => expect(root.querySelector('svg.animate-spin')).not.toBeInTheDocument())
+  })
 })

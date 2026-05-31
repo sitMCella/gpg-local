@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 @specs/features/02-gpg-library.md
 @specs/features/03-file-browse.md
 @specs/features/04-encrypt-file.md
+@specs/features/05-decrypt-file.md
+@specs/features/06-refresh.md
 
 ## Project motivation
 
@@ -64,7 +66,7 @@ pnpm build              # Type-check + web build → dist/
 pnpm build:tauri        # Web build + Rust compile + platform installers
 pnpm preview            # Serve dist/ locally
 pnpm lint               # ESLint
-
+pnpm format             # Format all source files with Prettier
 pnpm test               # Vitest unit tests (watch mode)
 pnpm test:coverage      # Vitest with v8 coverage report
 pnpm test:e2e           # Playwright e2e (auto-starts dev server)

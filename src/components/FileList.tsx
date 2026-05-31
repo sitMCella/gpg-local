@@ -13,6 +13,7 @@ import type { AppMode } from '@/components/ModeTabBar'
 interface FileListProps {
   dirPath: string | null
   mode: AppMode
+  refreshKey?: number
   onNavigate: (path: string) => void
   onEncryptRequest?: (entry: FsEntry) => void
 }
@@ -129,13 +130,19 @@ function FileListItem({
   )
 }
 
-export default function FileList({ dirPath, mode, onNavigate, onEncryptRequest }: FileListProps) {
+export default function FileList({
+  dirPath,
+  mode,
+  refreshKey,
+  onNavigate,
+  onEncryptRequest,
+}: FileListProps) {
   const { entries, loading, error, read } = useDirectory()
   const [decryptTarget, setDecryptTarget] = useState<FsEntry | null>(null)
 
   useEffect(() => {
     if (dirPath) read(dirPath)
-  }, [dirPath, read])
+  }, [dirPath, read, refreshKey])
 
   function refresh() {
     if (dirPath) read(dirPath)

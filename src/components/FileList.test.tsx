@@ -303,4 +303,39 @@ describe('FileList', () => {
     await user.pointer({ target: row, keys: '[MouseRight]' })
     expect(await screen.findByText('Decrypt file')).toBeInTheDocument()
   })
+
+  // ---- Feature 06 additions ----
+
+  it('re-reads the directory when refreshKey increments', async () => {
+    const { readDirectory } = await import('@/lib/platform')
+    const mock = readDirectory as ReturnType<typeof vi.fn>
+    mock.mockResolvedValue([{ name: 'file.txt', isDirectory: false, isSymlink: false }])
+
+    const { rerender } = render(
+      <FileList dirPath="/home/user" mode="encrypt" refreshKey={0} onNavigate={vi.fn()} />
+    )
+    await screen.findByText('file.txt')
+    const callCount = mock.mock.calls.length
+
+    rerender(<FileList dirPath="/home/user" mode="encrypt" refreshKey={1} onNavigate={vi.fn()} />)
+    await screen.findByText('file.txt')
+
+    expect(mock.mock.calls.length).toBeGreaterThan(callCount)
+  })
+
+  it('the panel Reload button re-reads the directory when clicked', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    const mock = readDirectory as ReturnType<typeof vi.fn>
+    mock.mockResolvedValue([{ name: 'notes.txt', isDirectory: false, isSymlink: false }])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+    await screen.findByText('notes.txt')
+    const callCount = mock.mock.calls.length
+
+    await user.click(screen.getByRole('button', { name: /reload directory/i }))
+    await screen.findByText('notes.txt')
+
+    expect(mock.mock.calls.length).toBeGreaterThan(callCount)
+  })
 })
