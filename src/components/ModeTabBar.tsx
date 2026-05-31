@@ -1,7 +1,6 @@
 import { RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 export type AppMode = 'encrypt' | 'decrypt'
 
@@ -21,21 +20,14 @@ export default function ModeTabBar({ mode, onModeChange, onRefresh }: ModeTabBar
         </TabsList>
       </Tabs>
 
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={onRefresh}
-              aria-label="Refresh current directory"
-            >
-              <RefreshCw className="size-4" />
-            </Button>
-          }
-        />
-        <TooltipContent>Refresh</TooltipContent>
-      </Tooltip>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={onRefresh}
+        aria-label="Refresh current directory"
+      >
+        <RefreshCw className="size-4" />
+      </Button>
     </div>
   )
 }
