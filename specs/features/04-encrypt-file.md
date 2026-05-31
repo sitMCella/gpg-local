@@ -76,12 +76,12 @@ Visual spec for the tab bar:
 ┌─────────────────────────────────────────────────────────┐
 │ [⌂] [📂]  │  home  /  Documents  /  Projects           │ ← header
 ├─────────────────────────────────────────────────────────┤
-│  [ Encrypt ]   Decrypt                                  │ ← tab bar (32 px)
+│  [ Encrypt ]   Decrypt                                  │ ← tab bar (40 px)
 ├──────────────┬──────────────────────────────────────────┤
 │  sidebar     │  file list                               │
 ```
 
-The active tab uses a bottom-border underline style (not a filled pill) to keep the chrome lightweight. Inactive tabs are muted.
+The active tab uses a 3 px bottom-border underline (not a filled pill) for a lightweight but clearly visible indicator. Active tab text is rendered at `text-sm font-semibold` and full foreground color; inactive tabs are `text-sm font-medium` at muted foreground. The tab bar height is 40 px (`h-10`) to give the larger text comfortable vertical padding.
 
 ### 2. Extend `FileList` props and filtering
 
@@ -331,7 +331,7 @@ src-tauri/
 ┌─────────────────────────────────────────────────────────┐
 │ [⌂] [📂]  │  home  /  Documents                        │
 ├─────────────────────────────────────────────────────────┤
-│  ▸ Encrypt   Decrypt                                    │
+│  ▸ ENCRYPT ▂▂▂   Decrypt                               │  ← 40 px tall; active: bold + 3 px underline
 ├──────────────┬──────────────────────────────────────────┤
 │ sidebar tree │ file list (encrypted files greyed out)   │
 └──────────────┴──────────────────────────────────────────┘
