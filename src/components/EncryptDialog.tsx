@@ -83,20 +83,20 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
 
   return (
     <Dialog open={target !== null} onOpenChange={handleOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-lg sm:max-w-xl p-8 gap-6">
         <DialogHeader>
-          <DialogTitle>Encrypt file</DialogTitle>
+          <DialogTitle className="text-lg">Encrypt file</DialogTitle>
           {target && (
-            <div className="text-sm text-muted-foreground flex flex-col gap-0.5">
+            <div className="text-sm text-muted-foreground flex flex-col gap-1 pt-1">
               <span>File: <span className="font-medium text-foreground">{target.name}</span></span>
               <span>Output: <span className="font-medium text-foreground">{outputName}</span></span>
             </div>
           )}
         </DialogHeader>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-5">
           {/* Passphrase field */}
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <label htmlFor="encrypt-passphrase" className="text-sm font-medium">
               Passphrase
             </label>
@@ -106,7 +106,7 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
                 type={showPass ? 'text' : 'password'}
                 value={passphrase}
                 onChange={(e) => setPassphrase((e.target as HTMLInputElement).value)}
-                className="pr-10"
+                className="pr-10 h-10"
                 autoComplete="new-password"
                 disabled={loading}
                 aria-invalid={!!error}
@@ -124,7 +124,7 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
           </div>
 
           {/* Confirm passphrase field */}
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <label htmlFor="encrypt-passphrase-confirm" className="text-sm font-medium">
               Confirm passphrase
             </label>
@@ -134,7 +134,7 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
                 type={showConfirm ? 'text' : 'password'}
                 value={confirm}
                 onChange={(e) => setConfirm((e.target as HTMLInputElement).value)}
-                className="pr-10"
+                className="pr-10 h-10"
                 autoComplete="new-password"
                 disabled={loading}
                 aria-invalid={!!error}
@@ -161,7 +161,7 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
 
         {/* Progress indicator */}
         {loading && (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <div
               className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
               role="progressbar"
@@ -173,7 +173,7 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="pt-2">
           <Button onClick={handleEncrypt} disabled={loading} className="order-last">
             Encrypt
           </Button>
