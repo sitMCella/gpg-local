@@ -93,13 +93,11 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install pnpm
-        run: npm install -g $(node -p "require('./package.json').packageManager.split('+')[0]")
+      - name: Enable Corepack
+        run: corepack enable pnpm
 
-      - name: Show pnpm version
-        run: |
-          which pnpm
-          pnpm --version
+      - name: Install pnpm
+        run: corepack prepare --activate
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
