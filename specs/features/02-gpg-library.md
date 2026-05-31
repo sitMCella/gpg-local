@@ -38,21 +38,21 @@ The Tauri wrapper (feature 01) gave us a native window and filesystem access. Th
 
 ## Prerequisites
 
-| Requirement | Notes |
-|---|---|
-| Feature 01 complete | `src-tauri/` scaffold must exist |
-| Rust toolchain (stable ≥ 1.77) | `sequoia-openpgp` requires a recent stable compiler |
-| `clang` / `llvm` on Linux | `sequoia-openpgp` links against `nettle` by default on Linux; the `crypto-rust` feature removes this requirement (see step 1) |
+| Requirement                    | Notes                                                                                                                         |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Feature 01 complete            | `src-tauri/` scaffold must exist                                                                                              |
+| Rust toolchain (stable ≥ 1.77) | `sequoia-openpgp` requires a recent stable compiler                                                                           |
+| `clang` / `llvm` on Linux      | `sequoia-openpgp` links against `nettle` by default on Linux; the `crypto-rust` feature removes this requirement (see step 1) |
 
 ### Choosing the crypto backend
 
 `sequoia-openpgp` supports multiple cryptographic backends via Cargo features:
 
-| Backend | Feature flag | Notes |
-|---|---|---|
-| Nettle (C library) | *(default)* | Fastest; requires `libnettle-dev` on Linux |
-| RustCrypto | `crypto-rust` | Pure Rust; no C deps; slightly slower; recommended for this project to avoid native build deps |
-| OpenSSL | `crypto-openssl` | Requires `libssl-dev` |
+| Backend            | Feature flag     | Notes                                                                                          |
+| ------------------ | ---------------- | ---------------------------------------------------------------------------------------------- |
+| Nettle (C library) | _(default)_      | Fastest; requires `libnettle-dev` on Linux                                                     |
+| RustCrypto         | `crypto-rust`    | Pure Rust; no C deps; slightly slower; recommended for this project to avoid native build deps |
+| OpenSSL            | `crypto-openssl` | Requires `libssl-dev`                                                                          |
 
 This feature uses the `crypto-rust` backend so the build has no native library requirements on any platform.
 
@@ -502,20 +502,20 @@ fn cert_to_info(cert: &sequoia_openpgp::Cert) -> crate::types::KeyInfo {
 Install the Tauri invoke helper (already available via `@tauri-apps/api`):
 
 ```ts
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from '@tauri-apps/api/core'
 
 // List keys
-const keys = await invoke<KeyInfo[]>('list_keys');
+const keys = await invoke<KeyInfo[]>('list_keys')
 
 // Import an armored key
-const info = await invoke<KeyInfo>('import_key', { armored: '-----BEGIN PGP ...' });
+const info = await invoke<KeyInfo>('import_key', { armored: '-----BEGIN PGP ...' })
 
 // Generate a new key pair
 const info = await invoke<KeyInfo>('generate_key', {
   name: 'Alice',
   email: 'alice@example.com',
   passphrase: 's3cr3t',
-});
+})
 
 // Encrypt a file
 await invoke('encrypt_file', {
@@ -524,7 +524,7 @@ await invoke('encrypt_file', {
     output_path: '/path/to/plaintext.txt.gpg',
     recipient_fingerprints: ['ABCD1234...'],
   },
-});
+})
 
 // Decrypt a file
 await invoke('decrypt_file', {
@@ -533,7 +533,7 @@ await invoke('decrypt_file', {
     output_path: '/path/to/plaintext.txt',
     passphrase: 's3cr3t',
   },
-});
+})
 ```
 
 Use `@tauri-apps/plugin-dialog` to let the user pick files via the native file-picker rather than typing paths manually.

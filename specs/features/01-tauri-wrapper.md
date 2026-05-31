@@ -34,12 +34,12 @@ GPG Local is a file-encryption tool that needs direct access to the host OS: rea
 
 ## Prerequisites
 
-| Requirement | Notes |
-|---|---|
-| Rust toolchain (stable) | Install via `rustup` |
-| `cargo` | Included with Rust |
-| Tauri CLI v2 | `cargo install tauri-cli --version "^2"` or `pnpm add -D @tauri-apps/cli` |
-| Platform build deps | See platform notes below |
+| Requirement             | Notes                                                                     |
+| ----------------------- | ------------------------------------------------------------------------- |
+| Rust toolchain (stable) | Install via `rustup`                                                      |
+| `cargo`                 | Included with Rust                                                        |
+| Tauri CLI v2            | `cargo install tauri-cli --version "^2"` or `pnpm add -D @tauri-apps/cli` |
+| Platform build deps     | See platform notes below                                                  |
 
 ### Platform-specific build dependencies
 
@@ -48,6 +48,7 @@ GPG Local is a file-encryption tool that needs direct access to the host OS: rea
 **Windows** — WebView2 runtime (pre-installed on Windows 10 21H2+), Visual Studio Build Tools with the "Desktop development with C++" workload.
 
 **Linux (Debian/Ubuntu)** —
+
 ```bash
 sudo apt install libwebkit2gtk-4.1-dev \
   build-essential curl wget file \
@@ -67,6 +68,7 @@ pnpm tauri init
 ```
 
 Answer the prompts:
+
 - **App name:** `GPG Local`
 - **Window title:** `GPG Local`
 - **Web assets path:** `../dist` (relative to the `src-tauri/` directory Tauri will create)
@@ -107,7 +109,7 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
-    open: false,   // Tauri opens its own window
+    open: false, // Tauri opens its own window
   },
   envPrefix: ['VITE_', 'TAURI_'],
   build: {
@@ -240,14 +242,14 @@ gpg-local/
 
 ## Updated Commands Reference
 
-| Command | Description |
-|---|---|
-| `pnpm dev` | Start the Vite dev server only (browser) |
-| `pnpm dev:tauri` | Start Vite dev server + open Tauri desktop window |
-| `pnpm build` | Production web build only (outputs `dist/`) |
-| `pnpm build:tauri` | Production web build + compile Rust + produce installers |
-| `pnpm test` | Vitest unit tests (unchanged) |
-| `pnpm test:e2e` | Playwright e2e tests against the Vite dev server (unchanged) |
+| Command            | Description                                                  |
+| ------------------ | ------------------------------------------------------------ |
+| `pnpm dev`         | Start the Vite dev server only (browser)                     |
+| `pnpm dev:tauri`   | Start Vite dev server + open Tauri desktop window            |
+| `pnpm build`       | Production web build only (outputs `dist/`)                  |
+| `pnpm build:tauri` | Production web build + compile Rust + produce installers     |
+| `pnpm test`        | Vitest unit tests (unchanged)                                |
+| `pnpm test:e2e`    | Playwright e2e tests against the Vite dev server (unchanged) |
 
 ---
 

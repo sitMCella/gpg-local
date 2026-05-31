@@ -2,19 +2,36 @@ import { File, FileText, Folder, Loader2, Lock, RefreshCw } from 'lucide-react'
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { ContextMenuRoot, ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
+import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu'
 import { useDirectory } from '@/hooks/useDirectory'
 import type { FsEntry } from '@/types/fs'
+import type { AppMode } from '@/components/ModeTabBar'
 
 interface FileListProps {
   dirPath: string | null
+  mode: AppMode
   onNavigate: (path: string) => void
+  onEncryptRequest?: (entry: FsEntry) => void
+}
+
+function isEncryptedFile(entry: FsEntry): boolean {
+  const ext = entry.name.split('.').pop()?.toLowerCase() ?? ''
+  return ext === 'gpg' || ext === 'pgp'
+}
+
+function isDisabled(entry: FsEntry, mode: AppMode): boolean {
+  if (mode === 'encrypt') return isEncryptedFile(entry)
+  return false
 }
 
 function fileIcon(entry: FsEntry) {
   if (entry.isDir) return <Folder className="size-4 shrink-0 text-blue-400" aria-hidden />
   const ext = entry.name.split('.').pop()?.toLowerCase() ?? ''
-  if (ext === 'gpg' || ext === 'pgp') return <Lock className="size-4 shrink-0 text-amber-400" aria-hidden />
-  if (ext === 'txt' || ext === 'md' || ext === 'log') return <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+  if (ext === 'gpg' || ext === 'pgp')
+    return <Lock className="size-4 shrink-0 text-amber-400" aria-hidden />
+  if (ext === 'txt' || ext === 'md' || ext === 'log')
+    return <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
   return <File className="size-4 shrink-0 text-muted-foreground" aria-hidden />
 }
 
@@ -24,39 +41,87 @@ function typeLabel(entry: FsEntry): string {
   return ext || 'File'
 }
 
-function FileListItem({ entry, onNavigate }: { entry: FsEntry; onNavigate: (path: string) => void }) {
+function RowContent({ entry }: { entry: FsEntry }) {
+  return (
+    <>
+      {fileIcon(entry)}
+      <span className="flex-1 truncate font-medium">{entry.name}</span>
+      <span className="text-xs text-muted-foreground w-24 text-right shrink-0">
+        {typeLabel(entry)}
+      </span>
+    </>
+  )
+}
+
+interface FileListItemProps {
+  entry: FsEntry
+  disabled: boolean
+  mode: AppMode
+  onNavigate: (path: string) => void
+  onEncryptRequest?: (entry: FsEntry) => void
+}
+
+function FileListItem({ entry, disabled, mode, onNavigate, onEncryptRequest }: FileListItemProps) {
   const handleDoubleClick = () => {
-    if (entry.isDir) onNavigate(entry.path)
+    if (!disabled && entry.isDir) onNavigate(entry.path)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if ((e.key === 'Enter' || e.key === ' ') && entry.isDir) {
+    if (!disabled && (e.key === 'Enter' || e.key === ' ') && entry.isDir) {
       e.preventDefault()
       onNavigate(entry.path)
     }
   }
 
+  const rowClasses = [
+    'flex items-center gap-3 px-4 py-1.5 text-sm rounded select-none outline-none',
+    disabled
+      ? 'opacity-40 cursor-not-allowed'
+      : 'hover:bg-accent hover:text-accent-foreground cursor-default focus-visible:ring-1 focus-visible:ring-ring',
+  ].join(' ')
+
+  if (disabled) {
+    return (
+      <div role="row" aria-disabled="true" tabIndex={-1} className={rowClasses}>
+        <RowContent entry={entry} />
+      </div>
+    )
+  }
+
   return (
-    <div
-      role="row"
-      tabIndex={0}
-      className="flex items-center gap-3 px-4 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground rounded cursor-default outline-none focus-visible:ring-1 focus-visible:ring-ring select-none"
-      onDoubleClick={handleDoubleClick}
-      onKeyDown={handleKeyDown}
-    >
-      {fileIcon(entry)}
-      <span className="flex-1 truncate font-medium">{entry.name}</span>
-      <span className="text-xs text-muted-foreground w-24 text-right shrink-0">{typeLabel(entry)}</span>
-    </div>
+    <ContextMenuRoot>
+      <ContextMenuPrimitive.Trigger
+        render={
+          <div
+            role="row"
+            tabIndex={0}
+            className={rowClasses}
+            onDoubleClick={handleDoubleClick}
+            onKeyDown={handleKeyDown}
+          >
+            <RowContent entry={entry} />
+          </div>
+        }
+      />
+      {mode === 'encrypt' && !entry.isDir && (
+        <ContextMenuContent>
+          <ContextMenuItem onClick={() => onEncryptRequest?.(entry)}>Encrypt file</ContextMenuItem>
+        </ContextMenuContent>
+      )}
+    </ContextMenuRoot>
   )
 }
 
-export default function FileList({ dirPath, onNavigate }: FileListProps) {
+export default function FileList({ dirPath, mode, onNavigate, onEncryptRequest }: FileListProps) {
   const { entries, loading, error, read } = useDirectory()
 
   useEffect(() => {
     if (dirPath) read(dirPath)
   }, [dirPath, read])
+
+  function refresh() {
+    if (dirPath) read(dirPath)
+  }
 
   if (!dirPath) {
     return (
@@ -69,12 +134,7 @@ export default function FileList({ dirPath, onNavigate }: FileListProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-2">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => read(dirPath)}
-          aria-label="Reload directory"
-        >
+        <Button variant="ghost" size="icon-sm" onClick={refresh} aria-label="Reload directory">
           <RefreshCw className="size-3.5" />
         </Button>
         <span className="text-xs text-muted-foreground">
@@ -107,7 +167,14 @@ export default function FileList({ dirPath, onNavigate }: FileListProps) {
         <ScrollArea className="flex-1">
           <div role="table" className="py-2 px-2" aria-label="File list">
             {entries.map((entry) => (
-              <FileListItem key={entry.path} entry={entry} onNavigate={onNavigate} />
+              <FileListItem
+                key={entry.path}
+                entry={entry}
+                disabled={isDisabled(entry, mode)}
+                mode={mode}
+                onNavigate={onNavigate}
+                onEncryptRequest={onEncryptRequest}
+              />
             ))}
           </div>
         </ScrollArea>

@@ -1,6 +1,6 @@
-use tauri::Manager;
-use sequoia_openpgp::Cert;
 use sequoia_openpgp::parse::Parse;
+use sequoia_openpgp::Cert;
+use tauri::Manager;
 
 use crate::types::{DecryptOptions, EncryptOptions, KeyInfo};
 
@@ -67,10 +67,8 @@ pub async fn generate_key(
 }
 
 #[tauri::command]
-pub async fn encrypt_file(
-    app: tauri::AppHandle,
-    options: EncryptOptions,
-) -> Result<(), String> {
+pub async fn encrypt_file(app: tauri::AppHandle, options: EncryptOptions) -> Result<(), String> {
+    use sequoia_openpgp::crypto::Password;
     use sequoia_openpgp::policy::StandardPolicy;
     use sequoia_openpgp::serialize::stream::{Encryptor2, LiteralWriter, Message};
     use std::io::Write;
@@ -101,13 +99,19 @@ pub async fn encrypt_file(
         })
         .collect();
 
+    if recipient_keys.is_empty() && options.passphrase.is_none() {
+        return Err("No recipients or passphrase specified".to_string());
+    }
+
     let plaintext = std::fs::read(&options.input_path).map_err(|e| e.to_string())?;
     let mut output = Vec::new();
 
     let message = Message::new(&mut output);
-    let message = Encryptor2::for_recipients(message, recipient_keys)
-        .build()
-        .map_err(|e| e.to_string())?;
+    let mut encryptor = Encryptor2::for_recipients(message, recipient_keys);
+    if let Some(pw) = &options.passphrase {
+        encryptor = encryptor.add_passwords([Password::from(pw.as_str())]);
+    }
+    let message = encryptor.build().map_err(|e| e.to_string())?;
     let mut message = LiteralWriter::new(message)
         .build()
         .map_err(|e| e.to_string())?;
@@ -119,10 +123,7 @@ pub async fn encrypt_file(
 }
 
 #[tauri::command]
-pub async fn decrypt_file(
-    app: tauri::AppHandle,
-    options: DecryptOptions,
-) -> Result<(), String> {
+pub async fn decrypt_file(app: tauri::AppHandle, options: DecryptOptions) -> Result<(), String> {
     use sequoia_openpgp::parse::stream::DecryptorBuilder;
     use sequoia_openpgp::policy::StandardPolicy;
 

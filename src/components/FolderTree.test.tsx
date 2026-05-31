@@ -51,9 +51,7 @@ describe('FolderTree', () => {
   })
 
   it('shows hidden directories when showHidden is true', async () => {
-    mockReadDirectory.mockResolvedValue([
-      { name: '.config', isDirectory: true, isSymlink: false },
-    ])
+    mockReadDirectory.mockResolvedValue([{ name: '.config', isDirectory: true, isSymlink: false }])
     renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect: vi.fn(), showHidden: true })
     expect(await screen.findByText('.config')).toBeInTheDocument()
   })

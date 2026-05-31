@@ -13,15 +13,15 @@ public/        Static assets served as-is (SVG icon sprite)
 
 **Stack:**
 
-| Layer | Technology |
-|---|---|
-| Desktop shell | Tauri 2 (Rust) |
-| UI framework | React 19 |
-| Language | TypeScript 6 / Rust (stable) |
-| Bundler / dev server | Vite 8 |
-| Unit / component tests | Vitest 4 + Testing Library |
-| End-to-end tests | Playwright |
-| Package manager | pnpm |
+| Layer                  | Technology                   |
+| ---------------------- | ---------------------------- |
+| Desktop shell          | Tauri 2 (Rust)               |
+| UI framework           | React 19                     |
+| Language               | TypeScript 6 / Rust (stable) |
+| Bundler / dev server   | Vite 8                       |
+| Unit / component tests | Vitest 4 + Testing Library   |
+| End-to-end tests       | Playwright                   |
+| Package manager        | pnpm                         |
 
 ## Prerequisites
 
@@ -48,19 +48,19 @@ pnpm install
 
 ## Commands
 
-| Command | Description |
-|---|---|
-| `pnpm dev` | Start the Vite dev server only (browser at `http://localhost:5173`) |
-| `pnpm dev:tauri` | Start Vite dev server + open the native Tauri desktop window |
-| `pnpm build` | Type-check and produce a web build in `dist/` |
-| `pnpm build:tauri` | Web build + compile Rust + produce platform installers in `src-tauri/target/release/bundle/` |
-| `pnpm preview` | Serve the production web build locally |
-| `pnpm lint` | Run ESLint across all source files |
-| `pnpm test` | Run unit tests in watch mode (Vitest) |
-| `pnpm test:ui` | Open the Vitest browser UI |
-| `pnpm test:coverage` | Run unit tests and generate a coverage report |
-| `pnpm test:e2e` | Run Playwright end-to-end tests (auto-starts Vite dev server) |
-| `pnpm test:e2e:ui` | Open the Playwright interactive UI |
+| Command              | Description                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------------------- |
+| `pnpm dev`           | Start the Vite dev server only (browser at `http://localhost:5173`)                          |
+| `pnpm dev:tauri`     | Start Vite dev server + open the native Tauri desktop window                                 |
+| `pnpm build`         | Type-check and produce a web build in `dist/`                                                |
+| `pnpm build:tauri`   | Web build + compile Rust + produce platform installers in `src-tauri/target/release/bundle/` |
+| `pnpm preview`       | Serve the production web build locally                                                       |
+| `pnpm lint`          | Run ESLint across all source files                                                           |
+| `pnpm test`          | Run unit tests in watch mode (Vitest)                                                        |
+| `pnpm test:ui`       | Open the Vitest browser UI                                                                   |
+| `pnpm test:coverage` | Run unit tests and generate a coverage report                                                |
+| `pnpm test:e2e`      | Run Playwright end-to-end tests (auto-starts Vite dev server)                                |
+| `pnpm test:e2e:ui`   | Open the Playwright interactive UI                                                           |
 
 ## License
 

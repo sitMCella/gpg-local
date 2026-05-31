@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @theme {
   /* App custom colors from spec */
@@ -29,13 +29,26 @@
   --radius: 0.375rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
+
+  --animate-indeterminate: indeterminate-slide 1.4s ease-in-out infinite;
+}
+
+@keyframes indeterminate-slide {
+  0% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
 }
 
 * {
   box-sizing: border-box;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   margin: 0;
   background-color: var(--color-panel);

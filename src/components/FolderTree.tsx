@@ -128,9 +128,7 @@ function FolderTreeNode({ node, depth, selectedPath, showHidden, onSelect, onUpd
           <Folder className="size-4 shrink-0 text-muted-foreground" />
         )}
         <Tooltip>
-          <TooltipTrigger render={<span className="truncate" />}>
-            {node.name}
-          </TooltipTrigger>
+          <TooltipTrigger render={<span className="truncate" />}>{node.name}</TooltipTrigger>
           <TooltipContent>{node.name}</TooltipContent>
         </Tooltip>
       </div>
@@ -163,13 +161,13 @@ export default function FolderTree({
 
   useEffect(() => {
     const newRoot = buildRootNode(rootPath)
-    setRoot(newRoot)
-    // Auto-expand root
-    loadChildren(newRoot, showHidden).then((children) => {
-      setRoot((prev) => ({ ...prev, children, expanded: true }))
-    }).catch(() => {
-      setRoot((prev) => ({ ...prev, children: [], expanded: true }))
-    })
+    loadChildren(newRoot, showHidden)
+      .then((children) => {
+        setRoot({ ...newRoot, children, expanded: true })
+      })
+      .catch(() => {
+        setRoot({ ...newRoot, children: [], expanded: true })
+      })
   }, [rootPath, showHidden])
 
   const updateNode = useCallback((path: string, updates: Partial<TreeNode>) => {
