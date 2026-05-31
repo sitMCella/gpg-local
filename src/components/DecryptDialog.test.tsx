@@ -134,6 +134,39 @@ describe('DecryptDialog', () => {
     })
   })
 
+  it('pressing Enter in the passphrase field triggers decryption', async () => {
+    const user = userEvent.setup()
+    const onSuccess = vi.fn()
+    render(<DecryptDialog target={mockTarget} onClose={vi.fn()} onSuccess={onSuccess} />)
+
+    await user.type(screen.getByLabelText(/^passphrase$/i), 'correctpassword{Enter}')
+
+    await waitFor(() => {
+      expect(onSuccess).toHaveBeenCalledWith('/home/user/report.md')
+    })
+  })
+
+  it('pressing Enter in the passphrase field is a no-op while loading', async () => {
+    const user = userEvent.setup()
+    const { invokeDecryptFile } = await import('@/lib/platform')
+    ;(invokeDecryptFile as ReturnType<typeof vi.fn>).mockImplementationOnce(
+      () => new Promise(() => {}) // never resolves
+    )
+
+    render(<DecryptDialog target={mockTarget} onClose={vi.fn()} onSuccess={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^passphrase$/i), 'mypassword')
+    await user.click(screen.getByRole('button', { name: /^decrypt$/i }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^decrypt$/i })).toBeDisabled()
+    })
+
+    // invokeDecryptFile was called exactly once (from the button click); Enter should not trigger a second call
+    await user.keyboard('{Enter}')
+    expect(invokeDecryptFile).toHaveBeenCalledTimes(1)
+  })
+
   it('toggles passphrase visibility when the eye icon is clicked', async () => {
     const user = userEvent.setup()
     render(<DecryptDialog target={mockTarget} onClose={vi.fn()} onSuccess={vi.fn()} />)
