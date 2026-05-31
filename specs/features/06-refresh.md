@@ -30,10 +30,10 @@ Features 03–05 deliver a working file browser. The file list panel already has
 
 ## Prerequisites
 
-| Requirement         | Notes                                                                                  |
-| ------------------- | -------------------------------------------------------------------------------------- |
-| Feature 03 complete | `FolderTree`, `FileList`, and the `useDirectory` hook must be in place                 |
-| Feature 04 complete | Mode tab bar and `App.tsx` state structure must exist                                  |
+| Requirement         | Notes                                                                                   |
+| ------------------- | --------------------------------------------------------------------------------------- |
+| Feature 03 complete | `FolderTree`, `FileList`, and the `useDirectory` hook must be in place                  |
+| Feature 04 complete | Mode tab bar and `App.tsx` state structure must exist                                   |
 | Feature 05 complete | Decrypt mode and all context-menu plumbing must be complete before touching these files |
 
 ---
@@ -66,7 +66,7 @@ interface FolderTreeProps {
   rootPath: string
   selectedPath: string | null
   onSelect: (path: string) => void
-  onRefreshRequest?: (path: string) => void  // ← new
+  onRefreshRequest?: (path: string) => void // ← new
   showHidden?: boolean
 }
 ```
@@ -76,15 +76,11 @@ interface FolderTreeProps {
 Wrap the existing node `<div>` in a `ContextMenu` trigger, and render a **Reload** item in the menu content:
 
 ```tsx
-import {
-  ContextMenuRoot,
-  ContextMenuContent,
-  ContextMenuItem,
-} from '@/components/ui/context-menu'
+import { ContextMenuRoot, ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu'
 
 // Inside FolderTreeNode render:
-<ContextMenuRoot>
+;<ContextMenuRoot>
   <ContextMenuPrimitive.Trigger
     render={
       <div
@@ -116,7 +112,7 @@ const handleReload = useCallback(async () => {
     onUpdate(node.path, { children: [], expanded: true })
   } finally {
     setLoading(false)
-    onReload?.(node.path)   // notify parent if this node is the selected dir
+    onReload?.(node.path) // notify parent if this node is the selected dir
   }
 }, [node, showHidden, onUpdate, onReload])
 ```
@@ -151,7 +147,7 @@ function handleSidebarRefreshRequest(path: string) {
 }
 
 // In JSX:
-<FolderTree
+;<FolderTree
   rootPath={rootPath}
   selectedPath={selectedPath}
   onSelect={setSelectedPath}
@@ -169,7 +165,7 @@ Extend `ModeTabBarProps` to accept a refresh callback:
 interface ModeTabBarProps {
   mode: AppMode
   onModeChange: (mode: AppMode) => void
-  onRefresh: () => void   // ← new
+  onRefresh: () => void // ← new
 }
 ```
 
@@ -222,7 +218,7 @@ The current `fileListKey` used as the React `key` prop on `FileList` destroys an
 interface FileListProps {
   dirPath: string | null
   mode: AppMode
-  refreshKey?: number      // ← new; incrementing triggers a re-read
+  refreshKey?: number // ← new; incrementing triggers a re-read
   onNavigate: (path: string) => void
   onEncryptRequest?: (entry: FsEntry) => void
 }
@@ -233,7 +229,7 @@ interface FileListProps {
 ```ts
 useEffect(() => {
   if (dirPath) read(dirPath)
-}, [dirPath, read, refreshKey])   // re-read when refreshKey changes
+}, [dirPath, read, refreshKey]) // re-read when refreshKey changes
 ```
 
 **In `App.tsx`:**
@@ -249,10 +245,10 @@ function refreshFileList() {
 }
 
 // In JSX:
-<FileList
+;<FileList
   dirPath={selectedPath}
   mode={mode}
-  refreshKey={fileListRefreshKey}   // no longer used as React key
+  refreshKey={fileListRefreshKey} // no longer used as React key
   onNavigate={setSelectedPath}
   onEncryptRequest={setEncryptTarget}
 />

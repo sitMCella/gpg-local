@@ -6,10 +6,7 @@ async function setupMocks(
   page: Page,
   opts: {
     homeEntries?: Array<{ name: string; isDirectory: boolean; isSymlink: boolean }>
-    childEntries?: Record<
-      string,
-      Array<{ name: string; isDirectory: boolean; isSymlink: boolean }>
-    >
+    childEntries?: Record<string, Array<{ name: string; isDirectory: boolean; isSymlink: boolean }>>
   } = {}
 ) {
   const homeEntries = opts.homeEntries ?? [
@@ -18,9 +15,7 @@ async function setupMocks(
     { name: 'secret.gpg', isDirectory: false, isSymlink: false },
   ]
   const childEntries = opts.childEntries ?? {
-    '/home/testuser/Documents': [
-      { name: 'report.md', isDirectory: false, isSymlink: false },
-    ],
+    '/home/testuser/Documents': [{ name: 'report.md', isDirectory: false, isSymlink: false }],
   }
 
   await page.addInitScript(
@@ -59,7 +54,9 @@ test('refresh button is positioned after the Encrypt/Decrypt tabs', async ({ pag
   await setupMocks(page)
   await page.goto('/')
 
-  const tabBar = page.locator('.flex.h-10').filter({ has: page.getByRole('tab', { name: /encrypt/i }) })
+  const tabBar = page
+    .locator('.flex.h-10')
+    .filter({ has: page.getByRole('tab', { name: /encrypt/i }) })
   const refreshBtn = tabBar.getByRole('button', { name: /refresh current directory/i })
   await expect(refreshBtn).toBeVisible()
 
@@ -281,7 +278,9 @@ test('refreshing via tab bar button does not trigger a full page reload', async 
   await page.goto('/')
 
   let reloaded = false
-  page.on('load', () => { reloaded = true })
+  page.on('load', () => {
+    reloaded = true
+  })
 
   await page.getByRole('button', { name: /refresh current directory/i }).click()
   // Allow any pending microtasks to settle
@@ -297,7 +296,9 @@ test('refreshing via file list panel button does not trigger a full page reload'
   await page.goto('/')
 
   let reloaded = false
-  page.on('load', () => { reloaded = true })
+  page.on('load', () => {
+    reloaded = true
+  })
 
   await page.getByRole('button', { name: /reload directory/i }).click()
   await page.waitForTimeout(200)

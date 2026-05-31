@@ -317,9 +317,7 @@ describe('FileList', () => {
     await screen.findByText('file.txt')
     const callCount = mock.mock.calls.length
 
-    rerender(
-      <FileList dirPath="/home/user" mode="encrypt" refreshKey={1} onNavigate={vi.fn()} />
-    )
+    rerender(<FileList dirPath="/home/user" mode="encrypt" refreshKey={1} onNavigate={vi.fn()} />)
     await screen.findByText('file.txt')
 
     expect(mock.mock.calls.length).toBeGreaterThan(callCount)

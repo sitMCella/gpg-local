@@ -130,7 +130,13 @@ function FileListItem({
   )
 }
 
-export default function FileList({ dirPath, mode, refreshKey, onNavigate, onEncryptRequest }: FileListProps) {
+export default function FileList({
+  dirPath,
+  mode,
+  refreshKey,
+  onNavigate,
+  onEncryptRequest,
+}: FileListProps) {
   const { entries, loading, error, read } = useDirectory()
   const [decryptTarget, setDecryptTarget] = useState<FsEntry | null>(null)
 

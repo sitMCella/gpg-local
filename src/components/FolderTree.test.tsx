@@ -128,7 +128,12 @@ describe('FolderTree', () => {
     mockReadDirectory
       .mockResolvedValueOnce([{ name: 'OldFolder', isDirectory: true, isSymlink: false }])
       .mockResolvedValueOnce([{ name: 'NewFolder', isDirectory: true, isSymlink: false }])
-    renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect: vi.fn(), onRefreshRequest: vi.fn() })
+    renderTree({
+      rootPath: '/home/alice',
+      selectedPath: null,
+      onSelect: vi.fn(),
+      onRefreshRequest: vi.fn(),
+    })
     expect(await screen.findByText('OldFolder')).toBeInTheDocument()
     const root = screen.getByRole('treeitem', { name: /alice/ })
     await user.pointer({ keys: '[MouseRight]', target: root })
@@ -143,27 +148,28 @@ describe('FolderTree', () => {
     // First call resolves immediately; second (reload) never resolves so we can inspect loading state
     let resolveReload!: () => void
     const reloadPromise = new Promise<{ name: string; isDirectory: boolean; isSymlink: boolean }[]>(
-      (resolve) => { resolveReload = () => resolve([]) }
+      (resolve) => {
+        resolveReload = () => resolve([])
+      }
     )
-    mockReadDirectory
-      .mockResolvedValueOnce([])
-      .mockReturnValueOnce(reloadPromise)
+    mockReadDirectory.mockResolvedValueOnce([]).mockReturnValueOnce(reloadPromise)
 
-    renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect: vi.fn(), onRefreshRequest: vi.fn() })
+    renderTree({
+      rootPath: '/home/alice',
+      selectedPath: null,
+      onSelect: vi.fn(),
+      onRefreshRequest: vi.fn(),
+    })
     const root = await screen.findByRole('treeitem', { name: /alice/ })
     await user.pointer({ keys: '[MouseRight]', target: root })
     const reloadItem = await screen.findByRole('menuitem', { name: /reload/i })
     await user.click(reloadItem)
 
     // Spinner should be visible while loading
-    await waitFor(() =>
-      expect(root.querySelector('svg.animate-spin')).toBeInTheDocument()
-    )
+    await waitFor(() => expect(root.querySelector('svg.animate-spin')).toBeInTheDocument())
 
     // Let the reload finish and spinner should disappear
     resolveReload()
-    await waitFor(() =>
-      expect(root.querySelector('svg.animate-spin')).not.toBeInTheDocument()
-    )
+    await waitFor(() => expect(root.querySelector('svg.animate-spin')).not.toBeInTheDocument())
   })
 })

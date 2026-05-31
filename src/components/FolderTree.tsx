@@ -55,7 +55,15 @@ interface NodeProps {
   onReload?: (path: string) => void
 }
 
-function FolderTreeNode({ node, depth, selectedPath, showHidden, onSelect, onUpdate, onReload }: NodeProps) {
+function FolderTreeNode({
+  node,
+  depth,
+  selectedPath,
+  showHidden,
+  onSelect,
+  onUpdate,
+  onReload,
+}: NodeProps) {
   const [loading, setLoading] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const isSelected = selectedPath === node.path
