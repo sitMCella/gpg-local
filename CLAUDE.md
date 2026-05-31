@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 @specs/features/02-gpg-library.md
 @specs/features/03-file-browse.md
 @specs/features/04-encrypt-file.md
+@specs/features/05-decrypt-file.md
+@specs/features/06-refresh.md
 
 ## Project motivation
 
