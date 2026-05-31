@@ -71,9 +71,10 @@ export default function App() {
         {/* Body — resizable split */}
         <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden">
           <ResizablePanel
-            defaultSize={25}
+            defaultSize="200px"
             minSize={15}
-            maxSize={50}
+            maxSize="400px"
+            groupResizeBehavior="preserve-pixel-size"
             className="bg-sidebar text-sidebar-foreground"
           >
             {rootPath && (
@@ -87,7 +88,7 @@ export default function App() {
 
           <ResizableHandle withHandle />
 
-          <ResizablePanel defaultSize={75}>
+          <ResizablePanel>
             <FileList dirPath={selectedPath} onNavigate={setSelectedPath} />
           </ResizablePanel>
         </ResizablePanelGroup>
