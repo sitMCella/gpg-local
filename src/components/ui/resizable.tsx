@@ -1,5 +1,4 @@
 import * as ResizablePrimitive from "react-resizable-panels"
-import { forwardRef } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -19,12 +18,9 @@ function ResizablePanelGroup({
   )
 }
 
-const ResizablePanel = forwardRef<
-  ResizablePrimitive.ImperativePanelHandle,
-  ResizablePrimitive.PanelProps
->(({ ...props }, ref) => (
-  <ResizablePrimitive.Panel data-slot="resizable-panel" ref={ref} {...props} />
-))
+function ResizablePanel({ ...props }: ResizablePrimitive.PanelProps) {
+  return <ResizablePrimitive.Panel data-slot="resizable-panel" {...props} />
+}
 
 function ResizableHandle({
   withHandle,

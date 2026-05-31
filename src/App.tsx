@@ -1,6 +1,5 @@
 import { FolderOpen, Home } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type { ImperativePanelHandle } from 'react-resizable-panels'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { Separator } from '@/components/ui/separator'
@@ -10,23 +9,9 @@ import FolderTree from '@/components/FolderTree'
 import PathBreadcrumb from '@/components/PathBreadcrumb'
 import { getHomeDir, openDirectoryPicker } from '@/lib/platform'
 
-// Fixed percentage bounds for the sidebar panel.
-// defaultSize targets 200 px on the configured 1024 px Tauri window.
-const SIDEBAR_DEFAULT = 20 // ≈ 200 px at 1024 px
-const SIDEBAR_MIN = 15
-const SIDEBAR_MAX = 50
-const SIDEBAR_MAX_PX = 400
-
 export default function App() {
   const [rootPath, setRootPath] = useState<string>('')
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
-  const sidebarRef = useRef<ImperativePanelHandle>(null)
-
-  // Enforce the absolute 400 px pixel cap when the user drags the handle.
-  const onSidebarResize = useCallback((sizePct: number) => {
-    const maxPct = (SIDEBAR_MAX_PX / window.innerWidth) * 100
-    if (sizePct > maxPct) sidebarRef.current?.resize(maxPct)
-  }, [])
 
   useEffect(() => {
     getHomeDir().then((home) => {
@@ -86,11 +71,10 @@ export default function App() {
         {/* Body — resizable split */}
         <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden">
           <ResizablePanel
-            ref={sidebarRef}
-            defaultSize={SIDEBAR_DEFAULT}
-            minSize={SIDEBAR_MIN}
-            maxSize={SIDEBAR_MAX}
-            onResize={onSidebarResize}
+            defaultSize="200px"
+            minSize={15}
+            maxSize="400px"
+            groupResizeBehavior="preserve-pixel-size"
             className="bg-sidebar text-sidebar-foreground"
           >
             {rootPath && (
@@ -104,7 +88,7 @@ export default function App() {
 
           <ResizableHandle withHandle />
 
-          <ResizablePanel defaultSize={100 - SIDEBAR_DEFAULT}>
+          <ResizablePanel>
             <FileList dirPath={selectedPath} onNavigate={setSelectedPath} />
           </ResizablePanel>
         </ResizablePanelGroup>
