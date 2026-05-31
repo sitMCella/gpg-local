@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -159,16 +159,23 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
           )}
         </div>
 
+        {/* Progress indicator */}
+        {loading && (
+          <div className="flex flex-col gap-1.5">
+            <div
+              className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+              role="progressbar"
+              aria-label="Encrypting"
+            >
+              <div className="h-full w-2/5 rounded-full bg-primary animate-indeterminate" />
+            </div>
+            <p className="text-xs text-muted-foreground">Encrypting file, please wait…</p>
+          </div>
+        )}
+
         <DialogFooter>
           <Button onClick={handleEncrypt} disabled={loading} className="order-last">
-            {loading ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                Encrypting…
-              </>
-            ) : (
-              'Encrypt'
-            )}
+            Encrypt
           </Button>
           <Button variant="ghost" onClick={() => { reset(); onClose() }} disabled={loading} className="order-first">
             Cancel

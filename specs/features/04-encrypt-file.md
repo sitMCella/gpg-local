@@ -184,6 +184,9 @@ Layout:
 │                                          │
 │  ⚠  Passphrases do not match.            │  ← inline error, only when present
 │                                          │
+│  ▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░    │  ← indeterminate progress bar (loading only)
+│  Encrypting file, please wait…           │  ← status text (loading only)
+│                                          │
 │               [Cancel]  [Encrypt]        │
 └──────────────────────────────────────────┘
 ```
@@ -196,9 +199,9 @@ Validation rules (client-side, evaluated on submit):
 | Passphrase length < 8 characters | "Passphrase must be at least 8 characters." |
 | Passphrase ≠ confirm | "Passphrases do not match." |
 
-Each field has a toggle button (`Eye` / `EyeOff` Lucide icons) to reveal the passphrase in plain text. Both fields default to `type="password"`.
+Each field has a toggle button (`Eye` / `EyeOff` Lucide icons) to reveal the passphrase in plain text. Both fields default to `type="password"`. The toggle buttons are excluded from the tab order (`tabIndex={-1}`).
 
-The **Encrypt** button is disabled while `loading` is true; it shows a `Loader2` spinner in place of the label.
+While `loading` is true, the **Encrypt** and **Cancel** buttons are disabled and an indeterminate progress bar appears above the footer together with the status text "Encrypting file, please wait…". The Encrypt button label does not change. The progress bar is an animated sliding fill (`animate-indeterminate`, defined in `index.css`) because no real progress percentage is available from the one-shot Tauri command.
 
 ### 5. Invoke the Tauri command
 
@@ -284,7 +287,7 @@ No new permissions are required beyond those added in features 02 and 03 (`fs:al
 - Shows "Passphrase must not be empty." error when the form is submitted with a blank passphrase.
 - Shows "Passphrase must be at least 8 characters." when passphrase is fewer than 8 chars.
 - Shows "Passphrases do not match." when the two fields differ.
-- The Encrypt button is disabled while `loading` is true.
+- While loading, the Encrypt and Cancel buttons are disabled, an indeterminate progress bar is visible, and the status text "Encrypting file, please wait…" is shown. The Encrypt button label does not change.
 - Toggles passphrase visibility when the eye icon is clicked.
 - Calls `onClose` when Cancel is clicked.
 
@@ -358,6 +361,8 @@ src-tauri/
 
 ### Encrypt dialog
 
+Idle state:
+
 ```
 ┌──────────────────────────────────────────┐
 │  Encrypt file                       [✕]  │
@@ -372,6 +377,28 @@ src-tauri/
 │  [                              ]  [👁]  │
 │                                          │
 │               [Cancel]  [Encrypt]        │
+└──────────────────────────────────────────┘
+```
+
+Loading state (after Encrypt is clicked):
+
+```
+┌──────────────────────────────────────────┐
+│  Encrypt file                       [✕]  │
+│                                          │
+│  File: report.md                         │
+│  Output: report.md.gpg                   │
+│                                          │
+│  Passphrase                              │
+│  [                              ]  [👁]  │
+│                                          │
+│  Confirm passphrase                      │
+│  [                              ]  [👁]  │
+│                                          │
+│  ▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   │  ← animated indeterminate bar
+│  Encrypting file, please wait…           │
+│                                          │
+│          [Cancel ░]  [Encrypt ░]         │  ← both disabled
 └──────────────────────────────────────────┘
 ```
 
