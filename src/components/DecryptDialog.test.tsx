@@ -148,7 +148,7 @@ describe('DecryptDialog', () => {
     expect(passInput).toHaveAttribute('type', 'password')
   })
 
-  it('clears passphrase and error when dialog reopens with a new target', async () => {
+  it('clears passphrase when dialog reopens with a new target', async () => {
     const user = userEvent.setup()
 
     function Wrapper({ target }: { target: typeof mockTarget | null }) {
@@ -158,15 +158,48 @@ describe('DecryptDialog', () => {
     const { rerender } = render(<Wrapper target={mockTarget} />)
 
     await user.type(screen.getByLabelText(/^passphrase$/i), 'somepass')
-    // Submit to trigger error
-    await user.click(screen.getByRole('button', { name: /^decrypt$/i }))
-    // passphrase is 'somepass' which is not empty, so no error from validation
-    // Let's just verify the passphrase field has our value, then close and reopen
     expect(screen.getByLabelText(/^passphrase$/i)).toHaveValue('somepass')
 
     rerender(<Wrapper target={null} />)
     rerender(<Wrapper target={mockTarget} />)
 
     expect(screen.getByLabelText(/^passphrase$/i)).toHaveValue('')
+  })
+
+  it('clears error when dialog reopens after a backend failure', async () => {
+    const user = userEvent.setup()
+    const { invokeDecryptFile } = await import('@/lib/platform')
+    ;(invokeDecryptFile as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('no matching secret key found')
+    )
+
+    function Wrapper({ target }: { target: typeof mockTarget | null }) {
+      return <DecryptDialog target={target} onClose={vi.fn()} onSuccess={vi.fn()} />
+    }
+
+    const { rerender } = render(<Wrapper target={mockTarget} />)
+
+    // Trigger a backend error
+    await user.type(screen.getByLabelText(/^passphrase$/i), 'wrongpassword')
+    await user.click(screen.getByRole('button', { name: /^decrypt$/i }))
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+
+    // Close and reopen the dialog
+    rerender(<Wrapper target={null} />)
+    rerender(<Wrapper target={mockTarget} />)
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/^passphrase$/i)).toHaveValue('')
+  })
+
+  it('calls onClose when the dialog X button closes the dialog', async () => {
+    const onClose = vi.fn()
+    render(<DecryptDialog target={mockTarget} onClose={onClose} onSuccess={vi.fn()} />)
+
+    // Shadcn Dialog renders a close button with an accessible label
+    const closeButton = screen.getByRole('button', { name: /close/i })
+    closeButton.click()
+
+    expect(onClose).toHaveBeenCalled()
   })
 })

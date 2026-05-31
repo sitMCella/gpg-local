@@ -286,4 +286,21 @@ describe('FileList', () => {
     expect(row.className).not.toContain('cursor-not-allowed')
     expect(row).not.toHaveAttribute('aria-disabled', 'true')
   })
+
+  it('in decrypt mode, a .pgp file row does not have cursor-not-allowed and shows "Decrypt file" on right-click', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'archive.pgp', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="decrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    expect(row.className).not.toContain('cursor-not-allowed')
+    expect(row).not.toHaveAttribute('aria-disabled', 'true')
+
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+    expect(await screen.findByText('Decrypt file')).toBeInTheDocument()
+  })
 })
