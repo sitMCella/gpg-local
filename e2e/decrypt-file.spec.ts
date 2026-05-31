@@ -595,3 +595,38 @@ test.describe('tab switching restores mode filtering', () => {
     await expect(txtRow).not.toHaveClass(/cursor-not-allowed/)
   })
 })
+
+// ─── Enter key in Passphrase field ───────────────────────────────────────────
+
+test.describe('Enter key shortcut in Passphrase field', () => {
+  test('pressing Enter in Passphrase field triggers decryption', async ({ page }) => {
+    await injectMocks(page, {
+      tree: { [HOME]: HOME_ENTRIES },
+      treeAfterDecrypt: { [HOME]: HOME_ENTRIES_AFTER_DECRYPT },
+      decryptResult: 'success',
+    })
+    await page.goto('/')
+    await switchToDecryptMode(page)
+    await openDecryptDialog(page, 'report.md.gpg')
+
+    await page.getByLabel(/^passphrase$/i).fill('correctpassword')
+    await page.getByLabel(/^passphrase$/i).press('Enter')
+
+    // Dialog should close and success toast should appear, same as clicking Decrypt
+    await expect(page.getByRole('dialog', { name: /decrypt file/i })).not.toBeVisible()
+    await expect(page.getByText(/report\.md\.gpg decrypted → report\.md/i)).toBeVisible()
+  })
+
+  test('pressing Enter in Passphrase field still validates the form', async ({ page }) => {
+    await injectMocks(page, { tree: { [HOME]: HOME_ENTRIES } })
+    await page.goto('/')
+    await switchToDecryptMode(page)
+    await openDecryptDialog(page, 'report.md.gpg')
+
+    // Leave passphrase empty and press Enter
+    await page.getByLabel(/^passphrase$/i).press('Enter')
+
+    await expect(page.getByRole('alert')).toContainText(/passphrase must not be empty/i)
+    await expect(page.getByRole('dialog', { name: /decrypt file/i })).toBeVisible()
+  })
+})
