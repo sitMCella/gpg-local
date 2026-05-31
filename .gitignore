@@ -1,0 +1,11 @@
+.DS_Store
+.claude/worktrees/
+.claire/
+node_modules
+dist
+coverage
+playwright-report
+test-results
+.env
+.env.local
+*.tsbuildinfo
