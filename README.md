@@ -82,7 +82,7 @@ Releases are published automatically by the [Release workflow](.github/workflows
 ```bash
 git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml
 git commit -m "chore: bump version to 0.2.0"
-# open a PR and merge, or push directly if permitted
+# open a PR and merge to main
 ```
 
 **3. Push the version tag:**
