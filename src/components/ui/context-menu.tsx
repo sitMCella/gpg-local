@@ -9,7 +9,10 @@ function ContextMenuTrigger(props: ContextMenuPrimitive.Trigger.Props) {
   return <ContextMenuPrimitive.Trigger {...props} />
 }
 
-function ContextMenuContent({ className, ...props }: React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Popup>) {
+function ContextMenuContent({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Popup>) {
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Positioner>
@@ -27,7 +30,10 @@ function ContextMenuContent({ className, ...props }: React.ComponentPropsWithout
   )
 }
 
-function ContextMenuItem({ className, ...props }: React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Item>) {
+function ContextMenuItem({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Item>) {
   return (
     <ContextMenuPrimitive.Item
       className={cn(

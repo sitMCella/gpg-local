@@ -1,6 +1,6 @@
-use tauri::Manager;
-use sequoia_openpgp::Cert;
 use sequoia_openpgp::parse::Parse;
+use sequoia_openpgp::Cert;
+use tauri::Manager;
 
 use crate::types::{DecryptOptions, EncryptOptions, KeyInfo};
 
@@ -67,10 +67,7 @@ pub async fn generate_key(
 }
 
 #[tauri::command]
-pub async fn encrypt_file(
-    app: tauri::AppHandle,
-    options: EncryptOptions,
-) -> Result<(), String> {
+pub async fn encrypt_file(app: tauri::AppHandle, options: EncryptOptions) -> Result<(), String> {
     use sequoia_openpgp::crypto::Password;
     use sequoia_openpgp::policy::StandardPolicy;
     use sequoia_openpgp::serialize::stream::{Encryptor2, LiteralWriter, Message};
@@ -126,10 +123,7 @@ pub async fn encrypt_file(
 }
 
 #[tauri::command]
-pub async fn decrypt_file(
-    app: tauri::AppHandle,
-    options: DecryptOptions,
-) -> Result<(), String> {
+pub async fn decrypt_file(app: tauri::AppHandle, options: DecryptOptions) -> Result<(), String> {
     use sequoia_openpgp::parse::stream::DecryptorBuilder;
     use sequoia_openpgp::policy::StandardPolicy;
 

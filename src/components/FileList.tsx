@@ -2,11 +2,7 @@ import { File, FileText, Folder, Loader2, Lock, RefreshCw } from 'lucide-react'
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  ContextMenuRoot,
-  ContextMenuContent,
-  ContextMenuItem,
-} from '@/components/ui/context-menu'
+import { ContextMenuRoot, ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu'
 import { useDirectory } from '@/hooks/useDirectory'
 import type { FsEntry } from '@/types/fs'
@@ -32,8 +28,10 @@ function isDisabled(entry: FsEntry, mode: AppMode): boolean {
 function fileIcon(entry: FsEntry) {
   if (entry.isDir) return <Folder className="size-4 shrink-0 text-blue-400" aria-hidden />
   const ext = entry.name.split('.').pop()?.toLowerCase() ?? ''
-  if (ext === 'gpg' || ext === 'pgp') return <Lock className="size-4 shrink-0 text-amber-400" aria-hidden />
-  if (ext === 'txt' || ext === 'md' || ext === 'log') return <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+  if (ext === 'gpg' || ext === 'pgp')
+    return <Lock className="size-4 shrink-0 text-amber-400" aria-hidden />
+  if (ext === 'txt' || ext === 'md' || ext === 'log')
+    return <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
   return <File className="size-4 shrink-0 text-muted-foreground" aria-hidden />
 }
 
@@ -48,7 +46,9 @@ function RowContent({ entry }: { entry: FsEntry }) {
     <>
       {fileIcon(entry)}
       <span className="flex-1 truncate font-medium">{entry.name}</span>
-      <span className="text-xs text-muted-foreground w-24 text-right shrink-0">{typeLabel(entry)}</span>
+      <span className="text-xs text-muted-foreground w-24 text-right shrink-0">
+        {typeLabel(entry)}
+      </span>
     </>
   )
 }
@@ -82,12 +82,7 @@ function FileListItem({ entry, disabled, mode, onNavigate, onEncryptRequest }: F
 
   if (disabled) {
     return (
-      <div
-        role="row"
-        aria-disabled="true"
-        tabIndex={-1}
-        className={rowClasses}
-      >
+      <div role="row" aria-disabled="true" tabIndex={-1} className={rowClasses}>
         <RowContent entry={entry} />
       </div>
     )
@@ -110,9 +105,7 @@ function FileListItem({ entry, disabled, mode, onNavigate, onEncryptRequest }: F
       />
       {mode === 'encrypt' && !entry.isDir && (
         <ContextMenuContent>
-          <ContextMenuItem onClick={() => onEncryptRequest?.(entry)}>
-            Encrypt file
-          </ContextMenuItem>
+          <ContextMenuItem onClick={() => onEncryptRequest?.(entry)}>Encrypt file</ContextMenuItem>
         </ContextMenuContent>
       )}
     </ContextMenuRoot>
@@ -141,12 +134,7 @@ export default function FileList({ dirPath, mode, onNavigate, onEncryptRequest }
   return (
     <div className="flex h-full flex-col">
       <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-2">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={refresh}
-          aria-label="Reload directory"
-        >
+        <Button variant="ghost" size="icon-sm" onClick={refresh} aria-label="Reload directory">
           <RefreshCw className="size-3.5" />
         </Button>
         <span className="text-xs text-muted-foreground">

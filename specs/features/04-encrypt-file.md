@@ -34,9 +34,9 @@ Features 01–03 delivered the Tauri shell, the GPG backend (sequoia-openpgp), a
 
 ## Prerequisites
 
-| Requirement | Notes |
-|---|---|
-| Feature 02 complete | `encrypt_file` Tauri command and the sequoia-openpgp backend must be present |
+| Requirement         | Notes                                                                                         |
+| ------------------- | --------------------------------------------------------------------------------------------- |
+| Feature 02 complete | `encrypt_file` Tauri command and the sequoia-openpgp backend must be present                  |
 | Feature 03 complete | File browser dashboard, `FileList` component, and Shadcn + Tailwind v4 setup must be in place |
 
 ---
@@ -53,10 +53,10 @@ pnpm dlx shadcn@canary add tabs
 
 Two tabs are defined now; a third (`Decrypt`) will be added in feature 05:
 
-| Tab label | Value | Description |
-|---|---|---|
-| Encrypt | `encrypt` | Encrypt mode — `.gpg`/`.pgp` files are greyed out |
-| (Decrypt) | `decrypt` | Placeholder, added in the next feature |
+| Tab label | Value     | Description                                       |
+| --------- | --------- | ------------------------------------------------- |
+| Encrypt   | `encrypt` | Encrypt mode — `.gpg`/`.pgp` files are greyed out |
+| (Decrypt) | `decrypt` | Placeholder, added in the next feature            |
 
 The active tab is stored in top-level App state:
 
@@ -103,7 +103,7 @@ function isDisabled(entry: FsEntry, mode: 'encrypt' | 'decrypt'): boolean {
     const ext = entry.name.split('.').pop()?.toLowerCase()
     return ext === 'gpg' || ext === 'pgp'
   }
-  return false  // decrypt-mode filtering added in feature 05
+  return false // decrypt-mode filtering added in feature 05
 }
 ```
 
@@ -130,9 +130,7 @@ The context menu is only rendered when the row is **not** disabled. Structure:
   </ContextMenuTrigger>
   {!disabled && (
     <ContextMenuContent>
-      <ContextMenuItem onSelect={() => onEncryptRequest(entry)}>
-        Encrypt file
-      </ContextMenuItem>
+      <ContextMenuItem onSelect={() => onEncryptRequest(entry)}>Encrypt file</ContextMenuItem>
     </ContextMenuContent>
   )}
 </ContextMenu>
@@ -152,7 +150,7 @@ The dialog is a controlled modal built on Shadcn `Dialog`. It is shown when `enc
 
 ```ts
 interface EncryptDialogProps {
-  target: FsEntry | null          // null = closed
+  target: FsEntry | null // null = closed
   onClose: () => void
   onSuccess: (outputPath: string) => void
 }
@@ -193,11 +191,11 @@ Layout:
 
 Validation rules (client-side, evaluated on submit):
 
-| Condition | Error message |
-|---|---|
-| Passphrase is empty | "Passphrase must not be empty." |
+| Condition                        | Error message                               |
+| -------------------------------- | ------------------------------------------- |
+| Passphrase is empty              | "Passphrase must not be empty."             |
 | Passphrase length < 8 characters | "Passphrase must be at least 8 characters." |
-| Passphrase ≠ confirm | "Passphrases do not match." |
+| Passphrase ≠ confirm             | "Passphrases do not match."                 |
 
 Each field has a toggle button (`Eye` / `EyeOff` Lucide icons) to reveal the passphrase in plain text. Both fields default to `type="password"`. The toggle buttons are excluded from the tab order (`tabIndex={-1}`).
 
@@ -219,8 +217,8 @@ async function handleEncrypt() {
       options: {
         input_path: target.path,
         output_path: outputPath,
-        passphrase,                   // symmetric encryption
-        recipient_fingerprints: [],   // empty = symmetric-only
+        passphrase, // symmetric encryption
+        recipient_fingerprints: [], // empty = symmetric-only
       },
     })
     onSuccess(outputPath)
@@ -235,6 +233,7 @@ async function handleEncrypt() {
 The `encrypt_file` command from feature 02 must be extended (or a parallel `encrypt_file_symmetric` command added) to accept an optional `passphrase` field for symmetric encryption. See the backend note in §6 below.
 
 On success, `onSuccess` is called with the output path, which:
+
 1. Closes the dialog (sets `encryptTarget` to `null`).
 2. Triggers a directory refresh in `FileList` so the new `.gpg` file appears.
 3. Displays a brief success toast.

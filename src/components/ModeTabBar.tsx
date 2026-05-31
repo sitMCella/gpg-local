@@ -9,11 +9,7 @@ interface ModeTabBarProps {
 
 export default function ModeTabBar({ mode, onModeChange }: ModeTabBarProps) {
   return (
-    <Tabs
-      value={mode}
-      onValueChange={(v) => onModeChange(v as AppMode)}
-      className="shrink-0"
-    >
+    <Tabs value={mode} onValueChange={(v) => onModeChange(v as AppMode)} className="shrink-0">
       <TabsList>
         <TabsTrigger value="encrypt">Encrypt</TabsTrigger>
         <TabsTrigger value="decrypt">Decrypt</TabsTrigger>

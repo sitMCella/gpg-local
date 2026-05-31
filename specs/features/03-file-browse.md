@@ -37,11 +37,11 @@ Features 01 and 02 delivered the Tauri shell and the GPG backend. The applicatio
 
 ## Prerequisites
 
-| Requirement | Notes |
-|---|---|
+| Requirement         | Notes                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------- |
 | Feature 01 complete | Tauri shell must exist; `fs:allow-read-dir`, `path:allow-home-dir` permissions needed |
-| Feature 02 complete | Confirms Tauri command plumbing works; no direct dependency on GPG commands |
-| Node ≥ 20, pnpm ≥ 9 | Already required by the project |
+| Feature 02 complete | Confirms Tauri command plumbing works; no direct dependency on GPG commands           |
+| Node ≥ 20, pnpm ≥ 9 | Already required by the project                                                       |
 
 ---
 
@@ -79,7 +79,7 @@ export default defineConfig({
 Replace the contents of `src/index.css` with the v4 import and CSS theme tokens:
 
 ```css
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   --color-sidebar: oklch(0.145 0 0);
@@ -100,7 +100,9 @@ Replace the contents of `src/index.css` with the v4 import and CSS theme tokens:
   box-sizing: border-box;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   margin: 0;
   background-color: var(--color-panel);
@@ -120,6 +122,7 @@ pnpm dlx shadcn@canary init
 ```
 
 Answer the prompts:
+
 - **Style:** Default
 - **Base color:** Zinc
 - **CSS variables:** Yes
@@ -140,19 +143,19 @@ pnpm add lucide-react
 
 Icons used in this feature:
 
-| Icon | Usage |
-|---|---|
-| `Home` | Toolbar — go to home directory |
-| `FolderOpen` | Toolbar / open directory picker |
-| `ChevronRight` | Collapsed folder node in tree |
-| `ChevronDown` | Expanded folder node in tree |
-| `Folder` | Closed folder in tree and file list |
-| `FolderOpen` | Open folder in tree |
-| `File` | Generic file in file list |
-| `FileText` | Text file (`.txt`, `.md`) |
-| `Lock` | Encrypted file (`.gpg`, `.pgp`) |
-| `RefreshCw` | Reload current directory |
-| `Loader2` | Spinner while reading a directory |
+| Icon           | Usage                               |
+| -------------- | ----------------------------------- |
+| `Home`         | Toolbar — go to home directory      |
+| `FolderOpen`   | Toolbar / open directory picker     |
+| `ChevronRight` | Collapsed folder node in tree       |
+| `ChevronDown`  | Expanded folder node in tree        |
+| `Folder`       | Closed folder in tree and file list |
+| `FolderOpen`   | Open folder in tree                 |
+| `File`         | Generic file in file list           |
+| `FileText`     | Text file (`.txt`, `.md`)           |
+| `Lock`         | Encrypted file (`.gpg`, `.pgp`)     |
+| `RefreshCw`    | Reload current directory            |
+| `Loader2`      | Spinner while reading a directory   |
 
 ### 4. Update Tauri capabilities
 
@@ -202,11 +205,11 @@ export interface FsEntry {
   path: string
   isDir: boolean
   isSymlink: boolean
-  modifiedAt: number | null  // Unix timestamp ms, null if unavailable
+  modifiedAt: number | null // Unix timestamp ms, null if unavailable
 }
 
 export interface TreeNode extends FsEntry {
-  children: TreeNode[] | null   // null = not yet loaded; [] = loaded, empty
+  children: TreeNode[] | null // null = not yet loaded; [] = loaded, empty
   expanded: boolean
 }
 ```
@@ -275,13 +278,14 @@ Key props:
 
 ```ts
 interface FolderTreeProps {
-  rootPath: string                          // initial root directory
-  selectedPath: string | null               // currently selected folder
-  onSelect: (path: string) => void          // callback when user selects a folder
+  rootPath: string // initial root directory
+  selectedPath: string | null // currently selected folder
+  onSelect: (path: string) => void // callback when user selects a folder
 }
 ```
 
 Behaviour:
+
 - Root node is auto-expanded on mount.
 - Clicking a folder node selects it (fires `onSelect`) and toggles its expanded state.
 - A `Loader2` spinner replaces the chevron while children are loading.
@@ -311,22 +315,23 @@ Key props:
 
 ```ts
 interface FileListProps {
-  dirPath: string | null     // path to display; null = show empty state
-  onNavigate: (path: string) => void  // double-click on a directory navigates into it
+  dirPath: string | null // path to display; null = show empty state
+  onNavigate: (path: string) => void // double-click on a directory navigates into it
 }
 ```
 
 File-type icon mapping:
 
-| Condition | Icon |
-|---|---|
-| `isDir` | `Folder` (muted blue) |
-| extension `.gpg` or `.pgp` | `Lock` (amber) |
-| extension `.txt`, `.md`, `.log` | `FileText` (muted) |
-| everything else | `File` (muted) |
+| Condition                       | Icon                  |
+| ------------------------------- | --------------------- |
+| `isDir`                         | `Folder` (muted blue) |
+| extension `.gpg` or `.pgp`      | `Lock` (amber)        |
+| extension `.txt`, `.md`, `.log` | `FileText` (muted)    |
+| everything else                 | `File` (muted)        |
 
 Empty state: when `dirPath` is `null` or returns zero entries, render a centered message:
-> *Select a folder from the sidebar to browse its contents.*
+
+> _Select a folder from the sidebar to browse its contents._
 
 Error state: when the read fails (permission denied, path gone), render an inline error banner using Shadcn `Alert` (destructive variant).
 
@@ -385,7 +390,17 @@ export default function App() {
       <header className="flex h-10 shrink-0 items-center gap-2 border-b border-border px-3">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-7" onClick={() => homeDir().then((h) => { setRootPath(h); setSelectedPath(h) })}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              onClick={() =>
+                homeDir().then((h) => {
+                  setRootPath(h)
+                  setSelectedPath(h)
+                })
+              }
+            >
               <Home className="size-4" />
             </Button>
           </TooltipTrigger>
@@ -403,15 +418,19 @@ export default function App() {
 
         <Separator orientation="vertical" className="h-5" />
 
-        {selectedPath && (
-          <PathBreadcrumb path={selectedPath} onNavigate={setSelectedPath} />
-        )}
+        {selectedPath && <PathBreadcrumb path={selectedPath} onNavigate={setSelectedPath} />}
       </header>
 
       {/* Body — resizable split */}
       <ResizablePanelGroup direction="horizontal" className="flex-1 overflow-hidden">
         {/* defaultSize is a percentage; targets ~200 px on a 1024 px window */}
-        <ResizablePanel defaultSize={25} minSize={15} maxSize={50} style={{ width: '200px', maxWidth: '400px' }} className="bg-sidebar text-sidebar-foreground">
+        <ResizablePanel
+          defaultSize={25}
+          minSize={15}
+          maxSize={50}
+          style={{ width: '200px', maxWidth: '400px' }}
+          className="bg-sidebar text-sidebar-foreground"
+        >
           {rootPath && (
             <FolderTree
               rootPath={rootPath}
@@ -424,10 +443,7 @@ export default function App() {
         <ResizableHandle withHandle />
 
         <ResizablePanel defaultSize={75}>
-          <FileList
-            dirPath={selectedPath}
-            onNavigate={setSelectedPath}
-          />
+          <FileList dirPath={selectedPath} onNavigate={setSelectedPath} />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

@@ -6,9 +6,17 @@ import App from './App'
 // jsdom has no layout engine, so actual pixel sizes can't be measured — we verify the props instead.
 vi.mock('@/components/ui/resizable', () => ({
   ResizablePanelGroup: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-    <div data-testid="panel-group" {...props}>{children}</div>
+    <div data-testid="panel-group" {...props}>
+      {children}
+    </div>
   ),
-  ResizablePanel: ({ children, defaultSize, minSize, maxSize, ...props }: React.HTMLAttributes<HTMLDivElement> & {
+  ResizablePanel: ({
+    children,
+    defaultSize,
+    minSize,
+    maxSize,
+    ...props
+  }: React.HTMLAttributes<HTMLDivElement> & {
     defaultSize?: string | number
     minSize?: string | number
     maxSize?: string | number
@@ -23,7 +31,10 @@ vi.mock('@/components/ui/resizable', () => ({
       {children}
     </div>
   ),
-  ResizableHandle: ({ withHandle: _withHandle, ...props }: React.HTMLAttributes<HTMLDivElement> & { withHandle?: boolean }) => (
+  ResizableHandle: ({
+    withHandle: _withHandle,
+    ...props
+  }: React.HTMLAttributes<HTMLDivElement> & { withHandle?: boolean }) => (
     <div data-testid="resizable-handle" {...props} />
   ),
 }))

@@ -1,8 +1,8 @@
-use std::path::PathBuf;
 use anyhow::{Context, Result};
-use sequoia_openpgp::Cert;
 use sequoia_openpgp::parse::Parse;
 use sequoia_openpgp::serialize::SerializeInto;
+use sequoia_openpgp::Cert;
+use std::path::PathBuf;
 
 pub struct Keyring {
     dir: PathBuf,

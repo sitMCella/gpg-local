@@ -3,11 +3,7 @@ import { cn } from '@/lib/utils'
 
 function Tabs({ className, ...props }: TabsPrimitive.Root.Props) {
   return (
-    <TabsPrimitive.Root
-      data-slot="tabs"
-      className={cn('flex flex-col', className)}
-      {...props}
-    />
+    <TabsPrimitive.Root data-slot="tabs" className={cn('flex flex-col', className)} {...props} />
   )
 }
 

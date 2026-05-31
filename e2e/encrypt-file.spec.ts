@@ -50,7 +50,7 @@ async function injectMocks(
     encryptResult = 'success',
     encryptErrorMessage = 'Permission denied',
     treeAfterEncrypt,
-  }: InjectOptions = {},
+  }: InjectOptions = {}
 ) {
   await page.addInitScript(
     ({
@@ -95,7 +95,7 @@ async function injectMocks(
       t2: treeAfterEncrypt ?? null,
       result: encryptResult,
       errorMsg: encryptErrorMessage,
-    },
+    }
   )
 }
 
@@ -296,7 +296,9 @@ test.describe('passphrase visibility toggles', () => {
     await expect(page.getByLabel(/^passphrase$/i)).toHaveAttribute('type', 'password')
   })
 
-  test('confirm passphrase field defaults to type=password and can be revealed independently', async ({ page }) => {
+  test('confirm passphrase field defaults to type=password and can be revealed independently', async ({
+    page,
+  }) => {
     await injectMocks(page, { tree: { [HOME]: HOME_ENTRIES } })
     await page.goto('/')
     await openEncryptDialog(page, 'report.md')
@@ -432,15 +434,19 @@ test.describe('backend error handling', () => {
 test.describe('loading state while encrypting', () => {
   test('Encrypt and Cancel buttons are disabled while encrypting', async ({ page }) => {
     // Use a mock that never resolves so we can observe the loading state
-    await page.addInitScript(({ h, t }: { h: string; t: Record<string, MockEntry[]> }) => {
-      ;(window as { __E2E_MOCK_HOME_DIR__?: string }).__E2E_MOCK_HOME_DIR__ = h
-      ;(
-        window as { __E2E_MOCK_READ_DIR__?: (p: string) => MockEntry[] }
-      ).__E2E_MOCK_READ_DIR__ = (path: string) => t[path] ?? []
-      ;(
-        window as { __E2E_MOCK_ENCRYPT_FILE__?: () => Promise<void> }
-      ).__E2E_MOCK_ENCRYPT_FILE__ = () => new Promise(() => {/* never resolves */})
-    }, { h: HOME, t: { [HOME]: HOME_ENTRIES } })
+    await page.addInitScript(
+      ({ h, t }: { h: string; t: Record<string, MockEntry[]> }) => {
+        ;(window as { __E2E_MOCK_HOME_DIR__?: string }).__E2E_MOCK_HOME_DIR__ = h
+        ;(window as { __E2E_MOCK_READ_DIR__?: (p: string) => MockEntry[] }).__E2E_MOCK_READ_DIR__ =
+          (path: string) => t[path] ?? []
+        ;(window as { __E2E_MOCK_ENCRYPT_FILE__?: () => Promise<void> }).__E2E_MOCK_ENCRYPT_FILE__ =
+          () =>
+            new Promise(() => {
+              /* never resolves */
+            })
+      },
+      { h: HOME, t: { [HOME]: HOME_ENTRIES } }
+    )
 
     await page.goto('/')
     await openEncryptDialog(page, 'report.md')
@@ -454,15 +460,19 @@ test.describe('loading state while encrypting', () => {
   })
 
   test('progress bar and status text appear while encrypting', async ({ page }) => {
-    await page.addInitScript(({ h, t }: { h: string; t: Record<string, MockEntry[]> }) => {
-      ;(window as { __E2E_MOCK_HOME_DIR__?: string }).__E2E_MOCK_HOME_DIR__ = h
-      ;(
-        window as { __E2E_MOCK_READ_DIR__?: (p: string) => MockEntry[] }
-      ).__E2E_MOCK_READ_DIR__ = (path: string) => t[path] ?? []
-      ;(
-        window as { __E2E_MOCK_ENCRYPT_FILE__?: () => Promise<void> }
-      ).__E2E_MOCK_ENCRYPT_FILE__ = () => new Promise(() => {/* never resolves */})
-    }, { h: HOME, t: { [HOME]: HOME_ENTRIES } })
+    await page.addInitScript(
+      ({ h, t }: { h: string; t: Record<string, MockEntry[]> }) => {
+        ;(window as { __E2E_MOCK_HOME_DIR__?: string }).__E2E_MOCK_HOME_DIR__ = h
+        ;(window as { __E2E_MOCK_READ_DIR__?: (p: string) => MockEntry[] }).__E2E_MOCK_READ_DIR__ =
+          (path: string) => t[path] ?? []
+        ;(window as { __E2E_MOCK_ENCRYPT_FILE__?: () => Promise<void> }).__E2E_MOCK_ENCRYPT_FILE__ =
+          () =>
+            new Promise(() => {
+              /* never resolves */
+            })
+      },
+      { h: HOME, t: { [HOME]: HOME_ENTRIES } }
+    )
 
     await page.goto('/')
     await openEncryptDialog(page, 'report.md')

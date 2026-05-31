@@ -13,7 +13,7 @@ async function injectMocks(
   }: {
     homeDir?: string
     tree?: Record<string, MockEntry[]>
-  } = {},
+  } = {}
 ) {
   await page.addInitScript(
     ({ h, t }: { h: string; t: Record<string, MockEntry[]> }) => {
@@ -24,7 +24,7 @@ async function injectMocks(
         }
       ).__E2E_MOCK_READ_DIR__ = (path: string) => t[path] ?? []
     },
-    { h: homeDir, t: tree },
+    { h: homeDir, t: tree }
   )
 }
 
@@ -326,7 +326,9 @@ test.describe('empty and error states', () => {
     await injectMocks(page)
     await page.goto('/')
 
-    await expect(page.getByText(/select a folder from the sidebar to browse its contents/i)).toBeVisible()
+    await expect(
+      page.getByText(/select a folder from the sidebar to browse its contents/i)
+    ).toBeVisible()
   })
 
   test('shows empty-state message when a directory has no entries', async ({ page }) => {
@@ -336,23 +338,28 @@ test.describe('empty and error states', () => {
     })
     await page.goto('/')
 
-    await expect(page.getByText(/select a folder from the sidebar to browse its contents/i)).toBeVisible()
+    await expect(
+      page.getByText(/select a folder from the sidebar to browse its contents/i)
+    ).toBeVisible()
   })
 
   // AC9: permission / error state
   test('shows inline error banner when readDir throws', async ({ page }) => {
     const RESTRICTED = '/home/restricted'
-    await page.addInitScript(({ h, r }: { h: string; r: string }) => {
-      ;(window as { __E2E_MOCK_HOME_DIR__?: string }).__E2E_MOCK_HOME_DIR__ = h
-      ;(
-        window as {
-          __E2E_MOCK_READ_DIR__?: (p: string) => never
+    await page.addInitScript(
+      ({ h, r }: { h: string; r: string }) => {
+        ;(window as { __E2E_MOCK_HOME_DIR__?: string }).__E2E_MOCK_HOME_DIR__ = h
+        ;(
+          window as {
+            __E2E_MOCK_READ_DIR__?: (p: string) => never
+          }
+        ).__E2E_MOCK_READ_DIR__ = (path: string) => {
+          throw new Error(`Permission denied: ${path}`)
         }
-      ).__E2E_MOCK_READ_DIR__ = (path: string) => {
-        throw new Error(`Permission denied: ${path}`)
-      }
-      void r
-    }, { h: RESTRICTED, r: RESTRICTED })
+        void r
+      },
+      { h: RESTRICTED, r: RESTRICTED }
+    )
     await page.goto('/')
 
     // Error banner should render — not a crash / blank screen

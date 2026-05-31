@@ -56,12 +56,7 @@ function DialogContent({ className, children, ...props }: DialogPrimitive.Popup.
 }
 
 function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn('flex flex-col gap-1.5', className)}
-      {...props}
-    />
-  )
+  return <div className={cn('flex flex-col gap-1.5', className)} {...props} />
 }
 
 function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
@@ -83,12 +78,7 @@ function DialogDescription({ className, ...props }: DialogPrimitive.Description.
 }
 
 function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn('flex justify-end gap-2 pt-2', className)}
-      {...props}
-    />
-  )
+  return <div className={cn('flex justify-end gap-2 pt-2', className)} {...props} />
 }
 
 function DialogClose(props: DialogPrimitive.Close.Props) {

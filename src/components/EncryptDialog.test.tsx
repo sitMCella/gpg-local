@@ -26,9 +26,7 @@ describe('EncryptDialog', () => {
   })
 
   it('renders file name and computed output path when target is set', () => {
-    render(
-      <EncryptDialog target={mockTarget} onClose={vi.fn()} onSuccess={vi.fn()} />
-    )
+    render(<EncryptDialog target={mockTarget} onClose={vi.fn()} onSuccess={vi.fn()} />)
 
     expect(screen.getByText('report.md')).toBeInTheDocument()
     expect(screen.getByText('report.md.gpg')).toBeInTheDocument()
@@ -59,7 +57,9 @@ describe('EncryptDialog', () => {
     await user.type(confirmInput, 'short')
     await user.click(screen.getByRole('button', { name: /^encrypt$/i }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Passphrase must be at least 8 characters.')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Passphrase must be at least 8 characters.'
+    )
   })
 
   it('shows "do not match" error when passphrase fields differ', async () => {

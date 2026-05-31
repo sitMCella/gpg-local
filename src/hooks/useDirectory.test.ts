@@ -73,14 +73,23 @@ describe('useDirectory', () => {
 
   it('sets loading to true while reading and false after completion', async () => {
     let resolve!: (v: unknown[]) => void
-    mockReadDirectory.mockImplementation(() => new Promise((r) => { resolve = r }))
+    mockReadDirectory.mockImplementation(
+      () =>
+        new Promise((r) => {
+          resolve = r
+        })
+    )
 
     const { result } = renderHook(() => useDirectory())
 
-    act(() => { result.current.read('/slow') })
+    act(() => {
+      result.current.read('/slow')
+    })
     expect(result.current.loading).toBe(true)
 
-    await act(async () => { resolve([]) })
+    await act(async () => {
+      resolve([])
+    })
     expect(result.current.loading).toBe(false)
   })
 

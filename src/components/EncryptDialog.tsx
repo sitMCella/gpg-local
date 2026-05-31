@@ -143,7 +143,9 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
               />
               <button
                 type="button"
-                aria-label={showConfirm ? 'Hide confirmation passphrase' : 'Show confirmation passphrase'}
+                aria-label={
+                  showConfirm ? 'Hide confirmation passphrase' : 'Show confirmation passphrase'
+                }
                 onClick={() => setShowConfirm((v) => !v)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
                 tabIndex={-1}
@@ -179,7 +181,15 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
           <Button onClick={handleEncrypt} disabled={loading} className="order-last">
             Encrypt
           </Button>
-          <Button variant="ghost" onClick={() => { reset(); onClose() }} disabled={loading} className="order-first">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              reset()
+              onClose()
+            }}
+            disabled={loading}
+            className="order-first"
+          >
             Cancel
           </Button>
         </DialogFooter>

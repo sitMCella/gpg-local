@@ -1,5 +1,3 @@
-use std::io::Write;
-use tempfile::tempdir;
 use sequoia_openpgp::{
     armor::{Kind, Writer as ArmorWriter},
     cert::CertBuilder,
@@ -10,6 +8,8 @@ use sequoia_openpgp::{
         SerializeInto,
     },
 };
+use std::io::Write;
+use tempfile::tempdir;
 
 use crate::{helpers::KeyringHelper, keyring::Keyring};
 
@@ -303,9 +303,7 @@ fn empty_passphrase_returns_error() {
 fn unknown_fingerprint_returns_none() {
     let dir = tempdir().unwrap();
     let kr = Keyring::open(dir.path().to_path_buf()).unwrap();
-    let result = kr
-        .find("DEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF")
-        .unwrap();
+    let result = kr.find("DEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF").unwrap();
     assert!(result.is_none());
 }
 

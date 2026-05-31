@@ -10,17 +10,23 @@ export async function getHomeDir(): Promise<string> {
   return getHomeDirBrowser()
 }
 
-export async function readDirectory(path: string): Promise<Array<{
-  name: string | undefined
-  isDirectory: boolean | undefined
-  isSymlink: boolean | undefined
-}>> {
+export async function readDirectory(path: string): Promise<
+  Array<{
+    name: string | undefined
+    isDirectory: boolean | undefined
+    isSymlink: boolean | undefined
+  }>
+> {
   if (isTauri()) {
     const { readDir } = await import('@tauri-apps/plugin-fs')
     return readDir(path)
   }
   // Allow Playwright e2e tests to inject mock directory data via window globals
-  const win = window as unknown as { __E2E_MOCK_READ_DIR__?: (p: string) => Array<{ name: string; isDirectory: boolean; isSymlink: boolean }> }
+  const win = window as unknown as {
+    __E2E_MOCK_READ_DIR__?: (
+      p: string
+    ) => Array<{ name: string; isDirectory: boolean; isSymlink: boolean }>
+  }
   if (typeof window !== 'undefined' && win.__E2E_MOCK_READ_DIR__) {
     return win.__E2E_MOCK_READ_DIR__(path)
   }
@@ -57,7 +63,9 @@ export async function invokeEncryptFile(options: EncryptFileOptions): Promise<vo
     return invoke('encrypt_file', { options })
   }
   // Allow Playwright e2e tests to inject mock encrypt behavior via window globals
-  const win = window as unknown as { __E2E_MOCK_ENCRYPT_FILE__?: (opts: EncryptFileOptions) => Promise<void> }
+  const win = window as unknown as {
+    __E2E_MOCK_ENCRYPT_FILE__?: (opts: EncryptFileOptions) => Promise<void>
+  }
   if (typeof window !== 'undefined' && win.__E2E_MOCK_ENCRYPT_FILE__) {
     return win.__E2E_MOCK_ENCRYPT_FILE__(options)
   }

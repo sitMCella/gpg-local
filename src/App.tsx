@@ -62,7 +62,12 @@ export default function App() {
           <Tooltip>
             <TooltipTrigger
               render={
-                <Button variant="ghost" size="icon-sm" onClick={goHome} aria-label="Go to home directory">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={goHome}
+                  aria-label="Go to home directory"
+                >
                   <Home className="size-4" />
                 </Button>
               }
@@ -73,7 +78,12 @@ export default function App() {
           <Tooltip>
             <TooltipTrigger
               render={
-                <Button variant="ghost" size="icon-sm" onClick={pickDirectory} aria-label="Open folder">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={pickDirectory}
+                  aria-label="Open folder"
+                >
                   <FolderOpen className="size-4" />
                 </Button>
               }
@@ -83,9 +93,7 @@ export default function App() {
 
           <Separator orientation="vertical" className="h-5" />
 
-          {selectedPath && (
-            <PathBreadcrumb path={selectedPath} onNavigate={setSelectedPath} />
-          )}
+          {selectedPath && <PathBreadcrumb path={selectedPath} onNavigate={setSelectedPath} />}
         </header>
 
         {/* Mode tab bar */}

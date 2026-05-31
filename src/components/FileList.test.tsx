@@ -157,9 +157,7 @@ describe('FileList', () => {
     const encryptItem = await screen.findByText('Encrypt file')
     await user.click(encryptItem)
 
-    expect(onEncryptRequest).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'report.md' })
-    )
+    expect(onEncryptRequest).toHaveBeenCalledWith(expect.objectContaining({ name: 'report.md' }))
   })
 
   it('in encrypt mode, a .gpg file row has opacity-40 class', async () => {
