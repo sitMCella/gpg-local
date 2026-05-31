@@ -8,6 +8,8 @@ on:
 jobs:
   validate-versions:
     runs-on: ubuntu-22.04
+    outputs:
+      release-notes: ${{ steps.changelog.outputs.notes }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,6 +32,23 @@ jobs:
 
           echo ""
           echo "All versions match: $TAURI"
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES=$(awk "/^## \[$VERSION\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md)
+
+          if [ -z "$NOTES" ]; then
+            echo "No changelog entry found for version $VERSION in CHANGELOG.md."
+            exit 1
+          fi
+
+          {
+            echo "notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
   build:
     needs: validate-versions
@@ -102,17 +121,7 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: GPG Local v__VERSION__
-          releaseBody: |
-            ## GPG Local v__VERSION__
-
-            Download the installer for your platform below.
-
-            | Platform | File |
-            |----------|------|
-            | macOS (Apple Silicon) | `.dmg` (aarch64) |
-            | macOS (Intel) | `.dmg` (x86_64) |
-            | Windows | `.msi` |
-            | Linux | `.AppImage`, `.deb` |
+          releaseBody: ${{ needs.validate-versions.outputs.release-notes }}
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
