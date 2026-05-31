@@ -29,9 +29,9 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
         'relative h-full px-4 text-sm font-medium text-muted-foreground transition-colors',
         'hover:text-foreground',
         'outline-none focus-visible:ring-1 focus-visible:ring-ring',
-        'data-[selected]:text-foreground data-[selected]:font-semibold',
+        'data-[active]:text-foreground data-[active]:font-semibold',
         'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-[3px] after:rounded-t after:bg-primary after:scale-x-0 after:transition-transform',
-        'data-[selected]:after:scale-x-100',
+        'data-[active]:after:scale-x-100',
         className
       )}
       {...props}
