@@ -4,14 +4,21 @@ import { Button } from '@/components/ui/button'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Toaster, toast } from '@/components/ui/toast'
+import EncryptDialog from '@/components/EncryptDialog'
 import FileList from '@/components/FileList'
 import FolderTree from '@/components/FolderTree'
+import ModeTabBar, { type AppMode } from '@/components/ModeTabBar'
 import PathBreadcrumb from '@/components/PathBreadcrumb'
 import { getHomeDir, openDirectoryPicker } from '@/lib/platform'
+import type { FsEntry } from '@/types/fs'
 
 export default function App() {
   const [rootPath, setRootPath] = useState<string>('')
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
+  const [mode, setMode] = useState<AppMode>('encrypt')
+  const [encryptTarget, setEncryptTarget] = useState<FsEntry | null>(null)
+  const [fileListKey, setFileListKey] = useState(0)
 
   useEffect(() => {
     getHomeDir().then((home) => {
@@ -32,6 +39,19 @@ export default function App() {
       setRootPath(dir)
       setSelectedPath(dir)
     }
+  }
+
+  function handleEncryptSuccess(outputPath: string) {
+    setEncryptTarget(null)
+    // Refresh the file list by bumping the key
+    setFileListKey((k) => k + 1)
+    // Show success toast
+    const outputName = outputPath.split('/').pop() ?? outputPath
+    const inputName = outputName.replace(/\.gpg$/, '')
+    toast.add({
+      title: `${inputName} encrypted → ${outputName}`,
+      timeout: 4000,
+    })
   }
 
   return (
@@ -68,6 +88,9 @@ export default function App() {
           )}
         </header>
 
+        {/* Mode tab bar */}
+        <ModeTabBar mode={mode} onModeChange={setMode} />
+
         {/* Body — resizable split */}
         <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden">
           <ResizablePanel
@@ -89,10 +112,26 @@ export default function App() {
           <ResizableHandle withHandle />
 
           <ResizablePanel>
-            <FileList dirPath={selectedPath} onNavigate={setSelectedPath} />
+            <FileList
+              key={fileListKey}
+              dirPath={selectedPath}
+              mode={mode}
+              onNavigate={setSelectedPath}
+              onEncryptRequest={setEncryptTarget}
+            />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+
+      {/* Encrypt dialog */}
+      <EncryptDialog
+        target={encryptTarget}
+        onClose={() => setEncryptTarget(null)}
+        onSuccess={handleEncryptSuccess}
+      />
+
+      {/* Toast notifications */}
+      <Toaster />
     </TooltipProvider>
   )
 }
