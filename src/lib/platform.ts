@@ -56,6 +56,10 @@ export async function invokeEncryptFile(options: EncryptFileOptions): Promise<vo
     const { invoke } = await import('@tauri-apps/api/core')
     return invoke('encrypt_file', { options })
   }
-  // In browser/test mode, simulate success (tests mock this function directly)
+  // Allow Playwright e2e tests to inject mock encrypt behavior via window globals
+  const win = window as unknown as { __E2E_MOCK_ENCRYPT_FILE__?: (opts: EncryptFileOptions) => Promise<void> }
+  if (typeof window !== 'undefined' && win.__E2E_MOCK_ENCRYPT_FILE__) {
+    return win.__E2E_MOCK_ENCRYPT_FILE__(options)
+  }
   return Promise.resolve()
 }
