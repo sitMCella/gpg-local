@@ -116,7 +116,7 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
                 aria-label={showPass ? 'Hide passphrase' : 'Show passphrase'}
                 onClick={() => setShowPass((v) => !v)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
-                tabIndex={0}
+                tabIndex={-1}
               >
                 {showPass ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
@@ -144,7 +144,7 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
                 aria-label={showConfirm ? 'Hide confirmation passphrase' : 'Show confirmation passphrase'}
                 onClick={() => setShowConfirm((v) => !v)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
-                tabIndex={0}
+                tabIndex={-1}
               >
                 {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
@@ -160,10 +160,7 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => { reset(); onClose() }} disabled={loading}>
-            Cancel
-          </Button>
-          <Button onClick={handleEncrypt} disabled={loading}>
+          <Button onClick={handleEncrypt} disabled={loading} className="order-last">
             {loading ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
@@ -172,6 +169,9 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
             ) : (
               'Encrypt'
             )}
+          </Button>
+          <Button variant="ghost" onClick={() => { reset(); onClose() }} disabled={loading} className="order-first">
+            Cancel
           </Button>
         </DialogFooter>
       </DialogContent>
