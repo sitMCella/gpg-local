@@ -2,6 +2,8 @@ mod commands;
 mod helpers;
 mod keyring;
 mod types;
+#[cfg(test)]
+mod tests;
 
 use commands::{decrypt_file, encrypt_file, generate_key, import_key, list_keys};
 

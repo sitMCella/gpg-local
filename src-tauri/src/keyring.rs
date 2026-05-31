@@ -18,7 +18,8 @@ impl Keyring {
     pub fn store(&self, cert: &Cert) -> Result<()> {
         let fp = cert.fingerprint().to_hex();
         let path = self.dir.join(format!("{fp}.pgp"));
-        let armored = cert.armored().to_vec()?;
+        // Use as_tsk() so that secret key material is included when present.
+        let armored = cert.as_tsk().armored().to_vec()?;
         std::fs::write(&path, armored)?;
         Ok(())
     }
