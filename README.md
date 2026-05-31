@@ -63,6 +63,37 @@ pnpm install
 | `pnpm test:e2e`      | Run Playwright end-to-end tests (auto-starts Vite dev server)                                |
 | `pnpm test:e2e:ui`   | Open the Playwright interactive UI                                                           |
 
+## Releasing a new version
+
+Releases are published automatically by the [Release workflow](.github/workflows/release.yml) when a version tag is pushed. The workflow builds platform installers for macOS (Apple Silicon + Intel), Windows, and Linux, then attaches them to a GitHub Release.
+
+### Steps
+
+**1. Bump the version in all three manifests** — they must all agree or the workflow will fail:
+
+| File | Field |
+|------|-------|
+| `package.json` | `"version"` |
+| `src-tauri/tauri.conf.json` | `"version"` |
+| `src-tauri/Cargo.toml` | `version` |
+
+**2. Commit and merge to `main`:**
+
+```bash
+git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml
+git commit -m "chore: bump version to 0.2.0"
+# open a PR and merge, or push directly if permitted
+```
+
+**3. Push the version tag:**
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+Pushing the tag triggers the release workflow. Once all four build jobs complete, the installers are attached to a new GitHub Release tagged `v0.2.0`.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
