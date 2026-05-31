@@ -87,9 +87,11 @@ export default function EncryptDialog({ target, onClose, onSuccess }: EncryptDia
         <DialogHeader>
           <DialogTitle className="text-lg">Encrypt file</DialogTitle>
           {target && (
-            <div className="text-sm text-muted-foreground flex flex-col gap-1 pt-1">
-              <span>File: <span className="font-medium text-foreground">{target.name}</span></span>
-              <span>Output: <span className="font-medium text-foreground">{outputName}</span></span>
+            <div className="text-sm text-muted-foreground grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 pt-1">
+              <span className="shrink-0">File:</span>
+              <span className="font-medium text-foreground truncate">{target.name}</span>
+              <span className="shrink-0">Output:</span>
+              <span className="font-medium text-foreground truncate">{outputName}</span>
             </div>
           )}
         </DialogHeader>
