@@ -139,6 +139,56 @@ describe('EncryptDialog', () => {
     expect(passInput).toHaveAttribute('type', 'password')
   })
 
+  it('toggles confirm passphrase field visibility independently', async () => {
+    const user = userEvent.setup()
+    render(<EncryptDialog target={mockTarget} onClose={vi.fn()} onSuccess={vi.fn()} />)
+
+    const confirmInput = screen.getByLabelText(/confirm passphrase/i)
+    expect(confirmInput).toHaveAttribute('type', 'password')
+
+    // Passphrase field should be unaffected while toggling the confirm field
+    const passInput = screen.getByLabelText(/^passphrase$/i)
+    expect(passInput).toHaveAttribute('type', 'password')
+
+    const toggleBtn = screen.getByRole('button', { name: /show confirmation passphrase/i })
+    await user.click(toggleBtn)
+
+    expect(confirmInput).toHaveAttribute('type', 'text')
+    // Passphrase field must still be hidden
+    expect(passInput).toHaveAttribute('type', 'password')
+
+    const hideBtn = screen.getByRole('button', { name: /hide confirmation passphrase/i })
+    await user.click(hideBtn)
+
+    expect(confirmInput).toHaveAttribute('type', 'password')
+  })
+
+  it('clears passphrase fields after dialog is closed and reopened', async () => {
+    const user = userEvent.setup()
+
+    // Use a wrapper so we can change target like the real parent does
+    function Wrapper({ target }: { target: typeof mockTarget | null }) {
+      return <EncryptDialog target={target} onClose={vi.fn()} onSuccess={vi.fn()} />
+    }
+
+    const { rerender } = render(<Wrapper target={mockTarget} />)
+
+    // Type a passphrase while dialog is open
+    await user.type(screen.getByLabelText(/^passphrase$/i), 'supersecret')
+    await user.type(screen.getByLabelText(/confirm passphrase/i), 'supersecret')
+
+    // Simulate Cancel: click the button (calls reset() then onClose())
+    await user.click(screen.getByRole('button', { name: /cancel/i }))
+
+    // Simulate what the parent does: set target to null (dialog closes), then reopen
+    rerender(<Wrapper target={null} />)
+    rerender(<Wrapper target={mockTarget} />)
+
+    // Fields must be empty on reopen
+    expect(screen.getByLabelText(/^passphrase$/i)).toHaveValue('')
+    expect(screen.getByLabelText(/confirm passphrase/i)).toHaveValue('')
+  })
+
   it('Encrypt button is disabled while loading', async () => {
     const user = userEvent.setup()
     // Make the invoke hang so we can observe the loading state
