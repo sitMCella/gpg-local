@@ -12,6 +12,7 @@
     "fs:allow-read-file",
     "fs:allow-write-file",
     "fs:allow-mkdir",
-    "fs:allow-read-dir"
+    "fs:allow-read-dir",
+    "fs:scope-home-recursive"
   ]
 }
