@@ -1,6 +1,8 @@
 import { ChevronDown, ChevronRight, Folder, FolderOpen, Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { ContextMenuRoot, ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
+import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu'
 import { cn } from '@/lib/utils'
 import { readDirectory } from '@/lib/platform'
 import type { TreeNode } from '@/types/fs'
@@ -9,6 +11,7 @@ interface FolderTreeProps {
   rootPath: string
   selectedPath: string | null
   onSelect: (path: string) => void
+  onRefreshRequest?: (path: string) => void
   showHidden?: boolean
 }
 
@@ -49,9 +52,10 @@ interface NodeProps {
   showHidden: boolean
   onSelect: (path: string) => void
   onUpdate: (path: string, updates: Partial<TreeNode>) => void
+  onReload?: (path: string) => void
 }
 
-function FolderTreeNode({ node, depth, selectedPath, showHidden, onSelect, onUpdate }: NodeProps) {
+function FolderTreeNode({ node, depth, selectedPath, showHidden, onSelect, onUpdate, onReload }: NodeProps) {
   const [loading, setLoading] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const isSelected = selectedPath === node.path
@@ -71,6 +75,19 @@ function FolderTreeNode({ node, depth, selectedPath, showHidden, onSelect, onUpd
       setLoading(false)
     }
   }, [node, showHidden, onUpdate])
+
+  const handleReload = useCallback(async () => {
+    setLoading(true)
+    try {
+      const children = await loadChildren(node, showHidden)
+      onUpdate(node.path, { children, expanded: true })
+    } catch {
+      onUpdate(node.path, { children: [], expanded: true })
+    } finally {
+      setLoading(false)
+      onReload?.(node.path)
+    }
+  }, [node, showHidden, onUpdate, onReload])
 
   const handleClick = useCallback(() => {
     onSelect(node.path)
@@ -94,40 +111,49 @@ function FolderTreeNode({ node, depth, selectedPath, showHidden, onSelect, onUpd
     [node, onSelect, expand, onUpdate]
   )
 
+  const nodeDiv = (
+    <div
+      ref={ref}
+      role="treeitem"
+      tabIndex={0}
+      aria-selected={isSelected}
+      aria-expanded={node.expanded}
+      className={cn(
+        'flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 text-sm outline-none select-none',
+        'hover:bg-accent hover:text-accent-foreground',
+        'focus-visible:ring-1 focus-visible:ring-ring',
+        isSelected && 'bg-accent text-accent-foreground font-medium'
+      )}
+      style={{ paddingLeft: `${depth * 12 + 8}px` }}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+    >
+      <span className="shrink-0 size-4 flex items-center justify-center">
+        {loading ? (
+          <Loader2 className="size-3 animate-spin text-muted-foreground" />
+        ) : node.expanded ? (
+          <ChevronDown className="size-3 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="size-3 text-muted-foreground" />
+        )}
+      </span>
+      {node.expanded ? (
+        <FolderOpen className="size-4 shrink-0 text-blue-400" />
+      ) : (
+        <Folder className="size-4 shrink-0 text-muted-foreground" />
+      )}
+      <span className="truncate">{node.name}</span>
+    </div>
+  )
+
   return (
     <div>
-      <div
-        ref={ref}
-        role="treeitem"
-        tabIndex={0}
-        aria-selected={isSelected}
-        aria-expanded={node.expanded}
-        className={cn(
-          'flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 text-sm outline-none select-none',
-          'hover:bg-accent hover:text-accent-foreground',
-          'focus-visible:ring-1 focus-visible:ring-ring',
-          isSelected && 'bg-accent text-accent-foreground font-medium'
-        )}
-        style={{ paddingLeft: `${depth * 12 + 8}px` }}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-      >
-        <span className="shrink-0 size-4 flex items-center justify-center">
-          {loading ? (
-            <Loader2 className="size-3 animate-spin text-muted-foreground" />
-          ) : node.expanded ? (
-            <ChevronDown className="size-3 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="size-3 text-muted-foreground" />
-          )}
-        </span>
-        {node.expanded ? (
-          <FolderOpen className="size-4 shrink-0 text-blue-400" />
-        ) : (
-          <Folder className="size-4 shrink-0 text-muted-foreground" />
-        )}
-        <span className="truncate">{node.name}</span>
-      </div>
+      <ContextMenuRoot>
+        <ContextMenuPrimitive.Trigger render={nodeDiv} />
+        <ContextMenuContent>
+          <ContextMenuItem onClick={handleReload}>Reload</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenuRoot>
       {node.expanded && node.children && node.children.length > 0 && (
         <div role="group">
           {node.children.map((child) => (
@@ -139,6 +165,7 @@ function FolderTreeNode({ node, depth, selectedPath, showHidden, onSelect, onUpd
               showHidden={showHidden}
               onSelect={onSelect}
               onUpdate={onUpdate}
+              onReload={onReload}
             />
           ))}
         </div>
@@ -151,6 +178,7 @@ export default function FolderTree({
   rootPath,
   selectedPath,
   onSelect,
+  onRefreshRequest,
   showHidden = false,
 }: FolderTreeProps) {
   const [root, setRoot] = useState<TreeNode>(() => buildRootNode(rootPath))
@@ -180,6 +208,7 @@ export default function FolderTree({
           showHidden={showHidden}
           onSelect={onSelect}
           onUpdate={updateNode}
+          onReload={onRefreshRequest}
         />
       </div>
     </ScrollArea>
