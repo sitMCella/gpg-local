@@ -14,7 +14,7 @@ describe('FileList', () => {
   })
 
   it('shows empty-state message when dirPath is null', () => {
-    render(<FileList dirPath={null} onNavigate={vi.fn()} />)
+    render(<FileList dirPath={null} mode="encrypt" onNavigate={vi.fn()} />)
 
     expect(
       screen.getByText('Select a folder from the sidebar to browse its contents.')
@@ -27,7 +27,7 @@ describe('FileList', () => {
       { name: 'secret.txt.gpg', isDirectory: false, isSymlink: false },
     ])
 
-    render(<FileList dirPath="/home/user" onNavigate={vi.fn()} />)
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
 
     const lockIcon = await screen.findByText('secret.txt.gpg')
     const row = lockIcon.closest('[role="row"]')
@@ -43,7 +43,7 @@ describe('FileList', () => {
       { name: 'encrypted.pgp', isDirectory: false, isSymlink: false },
     ])
 
-    render(<FileList dirPath="/home/user" onNavigate={vi.fn()} />)
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
 
     expect(await screen.findByText('encrypted.pgp')).toBeInTheDocument()
   })
@@ -55,13 +55,13 @@ describe('FileList', () => {
       { name: 'file2.txt', isDirectory: false, isSymlink: false },
     ])
 
-    render(<FileList dirPath="/home/user" onNavigate={vi.fn()} />)
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
 
     expect(await screen.findByText('2 items')).toBeInTheDocument()
   })
 
   it('shows empty-state message when dirPath is set but directory has no entries', async () => {
-    render(<FileList dirPath="/empty/dir" onNavigate={vi.fn()} />)
+    render(<FileList dirPath="/empty/dir" mode="encrypt" onNavigate={vi.fn()} />)
     expect(
       await screen.findByText('Select a folder from the sidebar to browse its contents.')
     ).toBeInTheDocument()
@@ -71,7 +71,7 @@ describe('FileList', () => {
     const { readDirectory } = await import('@/lib/platform')
     ;(readDirectory as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Permission denied'))
 
-    render(<FileList dirPath="/restricted" onNavigate={vi.fn()} />)
+    render(<FileList dirPath="/restricted" mode="encrypt" onNavigate={vi.fn()} />)
 
     expect(await screen.findByRole('alert')).toBeInTheDocument()
     expect(screen.getByText(/Permission denied/)).toBeInTheDocument()
@@ -84,7 +84,7 @@ describe('FileList', () => {
       { name: 'Documents', isDirectory: true, isSymlink: false },
     ])
     const onNavigate = vi.fn()
-    render(<FileList dirPath="/home/user" onNavigate={onNavigate} />)
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={onNavigate} />)
 
     const row = await screen.findByRole('row')
     await user.dblClick(row)
@@ -99,12 +99,88 @@ describe('FileList', () => {
       { name: 'Downloads', isDirectory: true, isSymlink: false },
     ])
     const onNavigate = vi.fn()
-    render(<FileList dirPath="/home/user" onNavigate={onNavigate} />)
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={onNavigate} />)
 
     const row = await screen.findByRole('row')
     row.focus()
     await user.keyboard('{Enter}')
 
     expect(onNavigate).toHaveBeenCalledWith('/home/user/Downloads')
+  })
+
+  // ---- Feature 04 additions ----
+
+  it('in encrypt mode, a .gpg file row has cursor-not-allowed class', async () => {
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'secret.gpg', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    expect(row.className).toContain('cursor-not-allowed')
+  })
+
+  it('in encrypt mode, a .gpg file row has aria-disabled=true', async () => {
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'archive.pgp', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    expect(row).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('in encrypt mode, a non-.gpg file row calls onEncryptRequest on right-click context menu', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'report.md', isDirectory: false, isSymlink: false },
+    ])
+    const onEncryptRequest = vi.fn()
+    render(
+      <FileList
+        dirPath="/home/user"
+        mode="encrypt"
+        onNavigate={vi.fn()}
+        onEncryptRequest={onEncryptRequest}
+      />
+    )
+
+    const row = await screen.findByRole('row')
+    // Right-click to open context menu
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    const encryptItem = await screen.findByText('Encrypt file')
+    await user.click(encryptItem)
+
+    expect(onEncryptRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'report.md' })
+    )
+  })
+
+  it('in encrypt mode, a .gpg file row does not call onEncryptRequest on right-click', async () => {
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'secret.gpg', isDirectory: false, isSymlink: false },
+    ])
+    const onEncryptRequest = vi.fn()
+    render(
+      <FileList
+        dirPath="/home/user"
+        mode="encrypt"
+        onNavigate={vi.fn()}
+        onEncryptRequest={onEncryptRequest}
+      />
+    )
+
+    // Wait for the row to appear
+    await screen.findByRole('row')
+    // The context menu item should not be present because the row is disabled
+    expect(screen.queryByText('Encrypt file')).not.toBeInTheDocument()
+    expect(onEncryptRequest).not.toHaveBeenCalled()
   })
 })
