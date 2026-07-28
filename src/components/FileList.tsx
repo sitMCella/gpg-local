@@ -6,6 +6,7 @@ import { ContextMenuRoot, ContextMenuContent, ContextMenuItem } from '@/componen
 import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu'
 import { useDirectory } from '@/hooks/useDirectory'
 import { toast } from '@/components/ui/toast'
+import { openPath } from '@tauri-apps/plugin-opener'
 import DecryptDialog from '@/components/DecryptDialog'
 import type { FsEntry } from '@/types/fs'
 import type { AppMode } from '@/components/ModeTabBar'
@@ -21,6 +22,29 @@ interface FileListProps {
 function isEncryptedFile(entry: FsEntry): boolean {
   const ext = entry.name.split('.').pop()?.toLowerCase() ?? ''
   return ext === 'gpg' || ext === 'pgp'
+}
+
+const TEXT_EXTENSIONS = new Set([
+  'txt',
+  'md',
+  'markdown',
+  'log',
+  'json',
+  'csv',
+  'tsv',
+  'yaml',
+  'yml',
+  'xml',
+  'ini',
+  'conf',
+  'cfg',
+  'toml',
+])
+
+function isTextFile(entry: FsEntry): boolean {
+  if (entry.isDir) return false
+  const ext = entry.name.split('.').pop()?.toLowerCase() ?? ''
+  return TEXT_EXTENSIONS.has(ext)
 }
 
 function isDisabled(entry: FsEntry, mode: AppMode): boolean {
@@ -65,6 +89,7 @@ interface FileListItemProps {
   onNavigate: (path: string) => void
   onEncryptRequest?: (entry: FsEntry) => void
   onDecryptRequest?: (entry: FsEntry) => void
+  onOpenRequest?: (entry: FsEntry) => void
 }
 
 function FileListItem({
@@ -74,6 +99,7 @@ function FileListItem({
   onNavigate,
   onEncryptRequest,
   onDecryptRequest,
+  onOpenRequest,
 }: FileListItemProps) {
   const handleDoubleClick = () => {
     if (!disabled && entry.isDir) onNavigate(entry.path)
@@ -118,6 +144,9 @@ function FileListItem({
       />
       {mode === 'encrypt' && !entry.isDir && (
         <ContextMenuContent>
+          {isTextFile(entry) && (
+            <ContextMenuItem onClick={() => onOpenRequest?.(entry)}>Open file</ContextMenuItem>
+          )}
           <ContextMenuItem onClick={() => onEncryptRequest?.(entry)}>Encrypt file</ContextMenuItem>
         </ContextMenuContent>
       )}
@@ -146,6 +175,18 @@ export default function FileList({
 
   function refresh() {
     if (dirPath) read(dirPath)
+  }
+
+  async function handleOpenRequest(entry: FsEntry) {
+    try {
+      await openPath(entry.path)
+    } catch (err) {
+      toast.add({
+        title: `Could not open ${entry.name}`,
+        description: String(err),
+        timeout: 4000,
+      })
+    }
   }
 
   function handleDecryptSuccess(outputPath: string) {
@@ -212,6 +253,7 @@ export default function FileList({
                   onNavigate={onNavigate}
                   onEncryptRequest={onEncryptRequest}
                   onDecryptRequest={setDecryptTarget}
+                  onOpenRequest={handleOpenRequest}
                 />
               ))}
             </div>
