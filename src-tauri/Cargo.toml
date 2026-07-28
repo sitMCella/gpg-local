@@ -1,8 +1,8 @@
 [package]
 name = "gpg-local"
-version = "0.1.0"
+version = "0.1.1"
 description = "GPG Local — desktop file encryption via GPG"
-authors = []
+authors = ["Marco Cella"]
 license = "MIT"
 repository = "https://github.com/sitMCella/gpg-local"
 edition = "2021"
