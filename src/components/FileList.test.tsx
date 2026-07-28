@@ -5,10 +5,7 @@ import FileList from './FileList'
 
 vi.mock('@/lib/platform', () => ({
   readDirectory: vi.fn().mockResolvedValue([]),
-}))
-
-vi.mock('@tauri-apps/plugin-opener', () => ({
-  openPath: vi.fn().mockResolvedValue(undefined),
+  openFilePath: vi.fn().mockResolvedValue(undefined),
 }))
 
 describe('FileList', () => {
@@ -421,13 +418,12 @@ describe('FileList', () => {
     expect(screen.queryByText('Open file')).not.toBeInTheDocument()
   })
 
-  it('clicking "Open file" calls openPath with the entry path', async () => {
+  it('clicking "Open file" calls openFilePath with the entry path', async () => {
     const user = userEvent.setup()
-    const { readDirectory } = await import('@/lib/platform')
+    const { readDirectory, openFilePath } = await import('@/lib/platform')
     ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
       { name: 'notes.txt', isDirectory: false, isSymlink: false },
     ])
-    const { openPath } = await import('@tauri-apps/plugin-opener')
 
     render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
 
@@ -437,17 +433,16 @@ describe('FileList', () => {
     const openItem = await screen.findByText('Open file')
     await user.click(openItem)
 
-    expect(openPath).toHaveBeenCalledWith('/home/user/notes.txt')
+    expect(openFilePath).toHaveBeenCalledWith('/home/user/notes.txt')
   })
 
-  it('when openPath rejects, the app does not crash and a toast is triggered', async () => {
+  it('when openFilePath rejects, the app does not crash and a toast is triggered', async () => {
     const user = userEvent.setup()
-    const { readDirectory } = await import('@/lib/platform')
+    const { readDirectory, openFilePath } = await import('@/lib/platform')
     ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
       { name: 'broken.log', isDirectory: false, isSymlink: false },
     ])
-    const { openPath } = await import('@tauri-apps/plugin-opener')
-    ;(openPath as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+    ;(openFilePath as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
       new Error('No default handler registered')
     )
 
@@ -459,6 +454,6 @@ describe('FileList', () => {
     const openItem = await screen.findByText('Open file')
     await user.click(openItem)
 
-    expect(openPath).toHaveBeenCalledWith('/home/user/broken.log')
+    expect(openFilePath).toHaveBeenCalledWith('/home/user/broken.log')
   })
 })

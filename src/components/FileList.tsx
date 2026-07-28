@@ -6,7 +6,7 @@ import { ContextMenuRoot, ContextMenuContent, ContextMenuItem } from '@/componen
 import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu'
 import { useDirectory } from '@/hooks/useDirectory'
 import { toast } from '@/components/ui/toast'
-import { openPath } from '@tauri-apps/plugin-opener'
+import { openFilePath } from '@/lib/platform'
 import DecryptDialog from '@/components/DecryptDialog'
 import type { FsEntry } from '@/types/fs'
 import type { AppMode } from '@/components/ModeTabBar'
@@ -180,7 +180,7 @@ export default function FileList({
 
   async function handleOpenRequest(entry: FsEntry) {
     try {
-      await openPath(entry.path)
+      await openFilePath(entry.path)
     } catch (err) {
       toast.add({
         title: `Could not open ${entry.name}`,
