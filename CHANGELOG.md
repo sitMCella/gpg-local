@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-07-28
+
+### Added
+
+- **Open text file in default application** — right-click any file with a recognized plain-text extension (`.txt`, `.md`, `.markdown`, `.rtf`, `.log`, `.json`, `.csv`, `.tsv`, `.yaml`, `.yml`, `.xml`, `.ini`, `.conf`, `.cfg`, `.toml`) in Encrypt mode to open it with the OS's configured default handler via `tauri-plugin-opener`. The action is read-only and does not invoke any GPG command.
+- **Platform abstraction for file opening** — `openFilePath` in `src/lib/platform.ts` routes through `tauri-plugin-opener` in Tauri and falls back to a window-global mock for browser-based e2e testing.
+- **End-to-end tests for open text file** — 29 Playwright tests covering context-menu visibility per mode and file type, OS open invocation, failure toast, and all recognized text extensions.
+
 ## [0.1.0] - 2026-05-31
 
 ### Added
