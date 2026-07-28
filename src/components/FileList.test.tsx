@@ -5,6 +5,7 @@ import FileList from './FileList'
 
 vi.mock('@/lib/platform', () => ({
   readDirectory: vi.fn().mockResolvedValue([]),
+  openFilePath: vi.fn().mockResolvedValue(undefined),
 }))
 
 describe('FileList', () => {
@@ -337,5 +338,122 @@ describe('FileList', () => {
     await screen.findByText('notes.txt')
 
     expect(mock.mock.calls.length).toBeGreaterThan(callCount)
+  })
+
+  // ---- Feature 07 additions ----
+
+  it('in encrypt mode, a .txt file context menu shows both "Open file" and "Encrypt file"', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'notes.txt', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    expect(await screen.findByText('Open file')).toBeInTheDocument()
+    expect(screen.getByText('Encrypt file')).toBeInTheDocument()
+  })
+
+  it('in encrypt mode, a .md file context menu shows "Open file"', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'readme.md', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    expect(await screen.findByText('Open file')).toBeInTheDocument()
+  })
+
+  it('in encrypt mode, a non-text non-encrypted file shows "Encrypt file" but not "Open file"', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'budget.xlsx', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    expect(await screen.findByText('Encrypt file')).toBeInTheDocument()
+    expect(screen.queryByText('Open file')).not.toBeInTheDocument()
+  })
+
+  it('in encrypt mode, a .gpg file row (disabled) shows no context menu at all', async () => {
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'secret.gpg', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    await screen.findByRole('row')
+    expect(screen.queryByText('Open file')).not.toBeInTheDocument()
+    expect(screen.queryByText('Encrypt file')).not.toBeInTheDocument()
+  })
+
+  it('in decrypt mode, no row ever shows "Open file"', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'secret.gpg', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="decrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    expect(await screen.findByText('Decrypt file')).toBeInTheDocument()
+    expect(screen.queryByText('Open file')).not.toBeInTheDocument()
+  })
+
+  it('clicking "Open file" calls openFilePath with the entry path', async () => {
+    const user = userEvent.setup()
+    const { readDirectory, openFilePath } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'notes.txt', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    const openItem = await screen.findByText('Open file')
+    await user.click(openItem)
+
+    expect(openFilePath).toHaveBeenCalledWith('/home/user/notes.txt')
+  })
+
+  it('when openFilePath rejects, the app does not crash and a toast is triggered', async () => {
+    const user = userEvent.setup()
+    const { readDirectory, openFilePath } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'broken.log', isDirectory: false, isSymlink: false },
+    ])
+    ;(openFilePath as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('No default handler registered')
+    )
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    const openItem = await screen.findByText('Open file')
+    await user.click(openItem)
+
+    expect(openFilePath).toHaveBeenCalledWith('/home/user/broken.log')
   })
 })

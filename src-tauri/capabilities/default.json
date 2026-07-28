@@ -13,6 +13,10 @@
     "fs:allow-write-file",
     "fs:allow-mkdir",
     "fs:allow-read-dir",
-    "fs:scope-home-recursive"
+    "fs:scope-home-recursive",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [{ "path": "$HOME/**" }]
+    }
   ]
 }

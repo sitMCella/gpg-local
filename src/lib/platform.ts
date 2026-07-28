@@ -91,3 +91,16 @@ export async function invokeDecryptFile(options: DecryptFileOptions): Promise<vo
   }
   return Promise.resolve()
 }
+
+export async function openFilePath(path: string): Promise<void> {
+  if (isTauri()) {
+    const { openPath } = await import('@tauri-apps/plugin-opener')
+    return openPath(path)
+  }
+  const win = window as unknown as {
+    __E2E_MOCK_OPEN_PATH__?: (p: string) => Promise<void>
+  }
+  if (typeof window !== 'undefined' && win.__E2E_MOCK_OPEN_PATH__) {
+    return win.__E2E_MOCK_OPEN_PATH__(path)
+  }
+}
