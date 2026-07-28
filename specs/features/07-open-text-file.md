@@ -82,6 +82,7 @@ const TEXT_EXTENSIONS = new Set([
   'txt',
   'md',
   'markdown',
+  'rtf',
   'log',
   'json',
   'csv',
@@ -102,7 +103,7 @@ function isTextFile(entry: FsEntry): boolean {
 }
 ```
 
-This list is intentionally the same "obviously plain text" set implied by the existing `FileText` icon check (`txt`, `md`, `log`) plus other common text/config formats. It does not attempt content sniffing (no reading of file bytes) — extension-only, consistent with how `isEncryptedFile` already works.
+This list is intentionally the same "obviously plain text" set implied by the existing `FileText` icon check (`txt`, `md`, `log`) plus other common text/config formats and `.rtf` (Rich Text Format — a text-based markup format with well-established OS default handlers on all platforms). It does not attempt content sniffing (no reading of file bytes) — extension-only, consistent with how `isEncryptedFile` already works.
 
 ### 3. Extend the context menu in `FileListItem`
 
@@ -275,7 +276,7 @@ No new component files are introduced — all changes are additive edits to `Fil
 
 ## Acceptance Criteria
 
-- [ ] In encrypt mode, right-clicking a file with a recognized text extension (`.txt`, `.md`, `.markdown`, `.log`, `.json`, `.csv`, `.tsv`, `.yaml`, `.yml`, `.xml`, `.ini`, `.conf`, `.cfg`, `.toml`) shows an "Open file" item above "Encrypt file".
+- [ ] In encrypt mode, right-clicking a file with a recognized text extension (`.txt`, `.md`, `.markdown`, `.rtf`, `.log`, `.json`, `.csv`, `.tsv`, `.yaml`, `.yml`, `.xml`, `.ini`, `.conf`, `.cfg`, `.toml`) shows an "Open file" item above "Encrypt file".
 - [ ] In encrypt mode, right-clicking a file with a non-text, non-encrypted extension shows only "Encrypt file" — no "Open file" item.
 - [ ] In encrypt mode, `.gpg`/`.pgp` rows remain disabled and show no context menu at all, unchanged from feature 04.
 - [ ] In decrypt mode, no context menu ever shows "Open file" — the decrypt-mode menu is unchanged from feature 05.

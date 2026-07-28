@@ -28,6 +28,7 @@ const TEXT_EXTENSIONS = new Set([
   'txt',
   'md',
   'markdown',
+  'rtf',
   'log',
   'json',
   'csv',
