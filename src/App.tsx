@@ -105,7 +105,7 @@ export default function App() {
         </header>
 
         {/* Mode tab bar */}
-        <ModeTabBar mode={mode} onModeChange={setMode} onRefresh={refreshFileList} />
+        <ModeTabBar mode={mode} onModeChange={setMode} />
 
         {/* Body — resizable split */}
         <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden">
