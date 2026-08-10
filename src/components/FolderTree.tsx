@@ -4,7 +4,8 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { ContextMenuRoot, ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu'
 import { cn } from '@/lib/utils'
-import { readDirectory } from '@/lib/platform'
+import { readDirectory, openFilePath } from '@/lib/platform'
+import { toast } from '@/components/ui/toast'
 import type { TreeNode } from '@/types/fs'
 
 interface FolderTreeProps {
@@ -84,6 +85,18 @@ function FolderTreeNode({
     }
   }, [node, showHidden, onUpdate])
 
+  const handleOpenInExplorer = useCallback(async () => {
+    try {
+      await openFilePath(node.path)
+    } catch (err) {
+      toast.add({
+        title: `Could not open ${node.name}`,
+        description: String(err),
+        timeout: 4000,
+      })
+    }
+  }, [node.path, node.name])
+
   const handleReload = useCallback(async () => {
     setLoading(true)
     try {
@@ -159,6 +172,7 @@ function FolderTreeNode({
       <ContextMenuRoot>
         <ContextMenuPrimitive.Trigger render={nodeDiv} />
         <ContextMenuContent>
+          <ContextMenuItem onClick={handleOpenInExplorer}>Open in file explorer</ContextMenuItem>
           <ContextMenuItem onClick={handleReload}>Reload</ContextMenuItem>
         </ContextMenuContent>
       </ContextMenuRoot>
