@@ -19,11 +19,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- **Open in file Explorer** — right-click any folder in the tree sidebar to open it with the OS's configured file Explorer.
+- **Open in file explorer from sidebar** — right-click any folder node in the sidebar tree to reveal it in the OS's native file manager (Finder on macOS, Explorer on Windows, Nautilus on Linux). The item appears above the existing "Reload" entry in the context menu.
 
 ### Removed
 
-- **Refresh all** — removed the refresh all control on the top bar.
+- **Refresh button in mode tab bar** — removed the Refresh button that sat next to the Encrypt/Decrypt tabs, as it was redundant with the existing reload controls in the sidebar context menu and file-list panel toolbar.
 
 ## [0.1.1] - 2026-07-28
 
