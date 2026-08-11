@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 @specs/features/05-decrypt-file.md
 @specs/features/06-refresh.md
 @specs/features/07-open-text-file.md
+@specs/features/08-open-directory.md
 
 ## Project motivation
 
