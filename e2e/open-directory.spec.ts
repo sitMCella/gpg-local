@@ -19,8 +19,8 @@ const HOME_ENTRIES: MockEntry[] = [
 interface InjectOptions {
   homeDir?: string
   tree?: Record<string, MockEntry[]>
-  openPathResult?: 'success' | 'error'
-  openPathErrorMessage?: string
+  revealResult?: 'success' | 'error'
+  revealErrorMessage?: string
 }
 
 async function injectMocks(
@@ -28,8 +28,8 @@ async function injectMocks(
   {
     homeDir = HOME,
     tree = {},
-    openPathResult = 'success',
-    openPathErrorMessage = 'Failed to open directory',
+    revealResult = 'success',
+    revealErrorMessage = 'Failed to open directory',
   }: InjectOptions = {}
 ) {
   await page.addInitScript(
@@ -52,21 +52,21 @@ async function injectMocks(
       ).__E2E_MOCK_READ_DIR__ = (path: string) => t[path] ?? []
       ;(
         window as {
-          __E2E_MOCK_OPEN_PATH__?: (p: string) => Promise<void>
-          __E2E_OPEN_PATH_CALLS__?: string[]
+          __E2E_MOCK_REVEAL_IN_EXPLORER__?: (p: string) => Promise<void>
+          __E2E_REVEAL_CALLS__?: string[]
         }
-      ).__E2E_OPEN_PATH_CALLS__ = []
+      ).__E2E_REVEAL_CALLS__ = []
       ;(
         window as {
-          __E2E_MOCK_OPEN_PATH__?: (p: string) => Promise<void>
-          __E2E_OPEN_PATH_CALLS__?: string[]
+          __E2E_MOCK_REVEAL_IN_EXPLORER__?: (p: string) => Promise<void>
+          __E2E_REVEAL_CALLS__?: string[]
         }
-      ).__E2E_MOCK_OPEN_PATH__ = (path: string) => {
+      ).__E2E_MOCK_REVEAL_IN_EXPLORER__ = (path: string) => {
         ;(
           window as {
-            __E2E_OPEN_PATH_CALLS__?: string[]
+            __E2E_REVEAL_CALLS__?: string[]
           }
-        ).__E2E_OPEN_PATH_CALLS__!.push(path)
+        ).__E2E_REVEAL_CALLS__!.push(path)
         if (result === 'error') {
           return Promise.reject(new Error(errorMsg))
         }
@@ -76,8 +76,8 @@ async function injectMocks(
     {
       h: homeDir,
       t: tree,
-      result: openPathResult,
-      errorMsg: openPathErrorMessage,
+      result: revealResult,
+      errorMsg: revealErrorMessage,
     }
   )
 }
@@ -145,7 +145,7 @@ test.describe('Open in file explorer action', () => {
     await page.getByRole('menuitem', { name: /open in file explorer/i }).click()
 
     const calls = await page.evaluate(
-      () => (window as { __E2E_OPEN_PATH_CALLS__?: string[] }).__E2E_OPEN_PATH_CALLS__
+      () => (window as { __E2E_REVEAL_CALLS__?: string[] }).__E2E_REVEAL_CALLS__
     )
     expect(calls).toEqual([HOME])
   })
@@ -162,7 +162,7 @@ test.describe('Open in file explorer action', () => {
     await page.getByRole('menuitem', { name: /open in file explorer/i }).click()
 
     const calls = await page.evaluate(
-      () => (window as { __E2E_OPEN_PATH_CALLS__?: string[] }).__E2E_OPEN_PATH_CALLS__
+      () => (window as { __E2E_REVEAL_CALLS__?: string[] }).__E2E_REVEAL_CALLS__
     )
     expect(calls).toEqual([`${HOME}/Documents`])
   })
@@ -174,8 +174,8 @@ test.describe('Open in file explorer failure handling', () => {
   test('failure to open shows a toast and the app does not crash', async ({ page }) => {
     await injectMocks(page, {
       tree: { [HOME]: HOME_ENTRIES },
-      openPathResult: 'error',
-      openPathErrorMessage: 'Permission denied',
+      revealResult: 'error',
+      revealErrorMessage: 'Permission denied',
     })
     await page.goto('/')
 
@@ -192,8 +192,8 @@ test.describe('Open in file explorer failure handling', () => {
   test('toast includes the error details', async ({ page }) => {
     await injectMocks(page, {
       tree: { [HOME]: HOME_ENTRIES },
-      openPathResult: 'error',
-      openPathErrorMessage: 'Permission denied: /home/testuser',
+      revealResult: 'error',
+      revealErrorMessage: 'Permission denied: /home/testuser',
     })
     await page.goto('/')
 
@@ -320,7 +320,7 @@ test.describe('File list panel: Open in file explorer', () => {
     await page.getByRole('menuitem', { name: /open in file explorer/i }).click()
 
     const calls = await page.evaluate(
-      () => (window as { __E2E_OPEN_PATH_CALLS__?: string[] }).__E2E_OPEN_PATH_CALLS__
+      () => (window as { __E2E_REVEAL_CALLS__?: string[] }).__E2E_REVEAL_CALLS__
     )
     expect(calls).toContain(`${HOME}/budget.xlsx`)
   })
@@ -336,7 +336,7 @@ test.describe('File list panel: Open in file explorer', () => {
     await page.getByRole('menuitem', { name: /open in file explorer/i }).click()
 
     const calls = await page.evaluate(
-      () => (window as { __E2E_OPEN_PATH_CALLS__?: string[] }).__E2E_OPEN_PATH_CALLS__
+      () => (window as { __E2E_REVEAL_CALLS__?: string[] }).__E2E_REVEAL_CALLS__
     )
     expect(calls).toContain(`${HOME}/Documents`)
   })
@@ -344,8 +344,8 @@ test.describe('File list panel: Open in file explorer', () => {
   test('failure to open a file shows a toast with error details', async ({ page }) => {
     await injectMocks(page, {
       tree: { [HOME]: FILE_LIST_ENTRIES },
-      openPathResult: 'error',
-      openPathErrorMessage: 'Permission denied: /home/testuser/budget.xlsx',
+      revealResult: 'error',
+      revealErrorMessage: 'Permission denied: /home/testuser/budget.xlsx',
     })
     await page.goto('/')
 

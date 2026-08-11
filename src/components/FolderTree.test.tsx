@@ -6,12 +6,12 @@ import FolderTree from './FolderTree'
 
 vi.mock('@/lib/platform', () => ({
   readDirectory: vi.fn(),
-  openFilePath: vi.fn(),
+  revealInFileExplorer: vi.fn(),
 }))
 
-import { readDirectory, openFilePath } from '@/lib/platform'
+import { readDirectory, revealInFileExplorer } from '@/lib/platform'
 const mockReadDirectory = readDirectory as ReturnType<typeof vi.fn>
-const mockOpenFilePath = openFilePath as ReturnType<typeof vi.fn>
+const mockRevealInFileExplorer = revealInFileExplorer as ReturnType<typeof vi.fn>
 
 function renderTree(props: Parameters<typeof FolderTree>[0]) {
   return render(
@@ -24,9 +24,9 @@ function renderTree(props: Parameters<typeof FolderTree>[0]) {
 describe('FolderTree', () => {
   beforeEach(() => {
     mockReadDirectory.mockReset()
-    mockOpenFilePath.mockReset()
+    mockRevealInFileExplorer.mockReset()
     mockReadDirectory.mockResolvedValue([])
-    mockOpenFilePath.mockResolvedValue(undefined)
+    mockRevealInFileExplorer.mockResolvedValue(undefined)
   })
 
   it('renders the root node labelled with the last path segment', async () => {
@@ -185,25 +185,25 @@ describe('FolderTree', () => {
     expect(await screen.findByRole('menuitem', { name: /open in file explorer/i })).toBeInTheDocument()
   })
 
-  it('clicking "Open in file explorer" calls openFilePath with the node path', async () => {
+  it('clicking "Open in file explorer" calls revealInFileExplorer with the node path', async () => {
     const user = userEvent.setup()
     renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect: vi.fn() })
     const root = await screen.findByRole('treeitem', { name: /alice/ })
     await user.pointer({ keys: '[MouseRight]', target: root })
     const openItem = await screen.findByRole('menuitem', { name: /open in file explorer/i })
     await user.click(openItem)
-    expect(mockOpenFilePath).toHaveBeenCalledWith('/home/alice')
+    expect(mockRevealInFileExplorer).toHaveBeenCalledWith('/home/alice')
   })
 
-  it('when openFilePath rejects, the app does not crash', async () => {
+  it('when revealInFileExplorer rejects, the app does not crash', async () => {
     const user = userEvent.setup()
-    mockOpenFilePath.mockRejectedValueOnce(new Error('No default handler'))
+    mockRevealInFileExplorer.mockRejectedValueOnce(new Error('No default handler'))
     renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect: vi.fn() })
     const root = await screen.findByRole('treeitem', { name: /alice/ })
     await user.pointer({ keys: '[MouseRight]', target: root })
     const openItem = await screen.findByRole('menuitem', { name: /open in file explorer/i })
     await user.click(openItem)
-    expect(mockOpenFilePath).toHaveBeenCalledWith('/home/alice')
+    expect(mockRevealInFileExplorer).toHaveBeenCalledWith('/home/alice')
   })
 
   it('calls onSelect and expands when Enter is pressed on a node', async () => {

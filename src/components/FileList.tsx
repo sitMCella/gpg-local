@@ -6,7 +6,7 @@ import { ContextMenuRoot, ContextMenuContent, ContextMenuItem } from '@/componen
 import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu'
 import { useDirectory } from '@/hooks/useDirectory'
 import { toast } from '@/components/ui/toast'
-import { openFilePath } from '@/lib/platform'
+import { openFilePath, revealInFileExplorer } from '@/lib/platform'
 import DecryptDialog from '@/components/DecryptDialog'
 import type { FsEntry } from '@/types/fs'
 import type { AppMode } from '@/components/ModeTabBar'
@@ -207,7 +207,7 @@ export default function FileList({
 
   async function handleOpenInExplorer(entry: FsEntry) {
     try {
-      await openFilePath(entry.path)
+      await revealInFileExplorer(entry.path)
     } catch (err) {
       toast.add({
         title: `Could not open ${entry.name}`,

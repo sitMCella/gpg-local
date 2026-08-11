@@ -6,6 +6,7 @@ import FileList from './FileList'
 vi.mock('@/lib/platform', () => ({
   readDirectory: vi.fn().mockResolvedValue([]),
   openFilePath: vi.fn().mockResolvedValue(undefined),
+  revealInFileExplorer: vi.fn().mockResolvedValue(undefined),
   invokeDecryptFile: vi.fn().mockResolvedValue(undefined),
 }))
 
@@ -686,9 +687,9 @@ describe('FileList', () => {
     expect(items[1]).toHaveTextContent('Open in file explorer')
   })
 
-  it('clicking "Open in file explorer" on a file row calls openFilePath with the entry path', async () => {
+  it('clicking "Open in file explorer" on a file row calls revealInFileExplorer with the entry path', async () => {
     const user = userEvent.setup()
-    const { readDirectory, openFilePath } = await import('@/lib/platform')
+    const { readDirectory, revealInFileExplorer } = await import('@/lib/platform')
     ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
       { name: 'budget.xlsx', isDirectory: false, isSymlink: false },
     ])
@@ -701,12 +702,12 @@ describe('FileList', () => {
     const explorerItem = await screen.findByText('Open in file explorer')
     await user.click(explorerItem)
 
-    expect(openFilePath).toHaveBeenCalledWith('/home/user/budget.xlsx')
+    expect(revealInFileExplorer).toHaveBeenCalledWith('/home/user/budget.xlsx')
   })
 
-  it('clicking "Open in file explorer" on a directory row calls openFilePath with the directory path', async () => {
+  it('clicking "Open in file explorer" on a directory row calls revealInFileExplorer with the directory path', async () => {
     const user = userEvent.setup()
-    const { readDirectory, openFilePath } = await import('@/lib/platform')
+    const { readDirectory, revealInFileExplorer } = await import('@/lib/platform')
     ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
       { name: 'Documents', isDirectory: true, isSymlink: false },
     ])
@@ -719,16 +720,16 @@ describe('FileList', () => {
     const explorerItem = await screen.findByText('Open in file explorer')
     await user.click(explorerItem)
 
-    expect(openFilePath).toHaveBeenCalledWith('/home/user/Documents')
+    expect(revealInFileExplorer).toHaveBeenCalledWith('/home/user/Documents')
   })
 
-  it('when openFilePath rejects on "Open in file explorer", no error is thrown', async () => {
+  it('when revealInFileExplorer rejects on "Open in file explorer", no error is thrown', async () => {
     const user = userEvent.setup()
-    const { readDirectory, openFilePath } = await import('@/lib/platform')
+    const { readDirectory, revealInFileExplorer } = await import('@/lib/platform')
     ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
       { name: 'budget.xlsx', isDirectory: false, isSymlink: false },
     ])
-    ;(openFilePath as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+    ;(revealInFileExplorer as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
       new Error('Permission denied')
     )
 
@@ -740,7 +741,7 @@ describe('FileList', () => {
     const explorerItem = await screen.findByText('Open in file explorer')
     await user.click(explorerItem)
 
-    expect(openFilePath).toHaveBeenCalledWith('/home/user/budget.xlsx')
+    expect(revealInFileExplorer).toHaveBeenCalledWith('/home/user/budget.xlsx')
   })
 
   it('in encrypt mode, a .gpg file row (disabled) shows no context menu including "Open in file explorer"', async () => {
