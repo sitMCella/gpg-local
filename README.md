@@ -2,6 +2,10 @@
 
 GPG Local is a desktop application that provides a GUI for encrypting and decrypting local files using GPG. It ships as a native binary on Windows, macOS, and Linux via [Tauri 2](https://tauri.app/), with a React + Vite UI that can also run in a browser during development.
 
+## Documentation
+
+For installation instructions, usage guides, and troubleshooting, see the [Wiki](https://github.com/sitMCella/gpg-local/wiki).
+
 ## Architecture
 
 ```
