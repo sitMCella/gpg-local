@@ -205,6 +205,159 @@ test.describe('Open in file explorer failure handling', () => {
   })
 })
 
+// ─── File list panel: "Open in file explorer" context menu ──────────────────
+
+test.describe('File list panel: Open in file explorer', () => {
+  const FILE_LIST_ENTRIES: MockEntry[] = [
+    { name: 'Documents', isDirectory: true, isSymlink: false },
+    { name: 'notes.txt', isDirectory: false, isSymlink: false },
+    { name: 'budget.xlsx', isDirectory: false, isSymlink: false },
+    { name: 'secret.gpg', isDirectory: false, isSymlink: false },
+  ]
+
+  test('in encrypt mode, right-clicking a non-encrypted file shows "Open in file explorer" as the last context menu item', async ({
+    page,
+  }) => {
+    await injectMocks(page, { tree: { [HOME]: FILE_LIST_ENTRIES } })
+    await page.goto('/')
+
+    const row = page.getByRole('row', { name: /budget\.xlsx/i })
+    await expect(row).toBeVisible()
+    await row.click({ button: 'right' })
+
+    const items = page.getByRole('menuitem')
+    const lastItem = items.last()
+    await expect(lastItem).toHaveText(/open in file explorer/i)
+  })
+
+  test('in encrypt mode, right-clicking a text file shows three items: Open file, Encrypt file, Open in file explorer', async ({
+    page,
+  }) => {
+    await injectMocks(page, { tree: { [HOME]: FILE_LIST_ENTRIES } })
+    await page.goto('/')
+
+    const row = page.getByRole('row', { name: /notes\.txt/i })
+    await expect(row).toBeVisible()
+    await row.click({ button: 'right' })
+
+    const items = page.getByRole('menuitem')
+    await expect(items).toHaveCount(3)
+    await expect(items.nth(0)).toHaveText(/open file/i)
+    await expect(items.nth(1)).toHaveText(/encrypt file/i)
+    await expect(items.nth(2)).toHaveText(/open in file explorer/i)
+  })
+
+  test('in encrypt mode, right-clicking a non-text file shows two items: Encrypt file, Open in file explorer', async ({
+    page,
+  }) => {
+    await injectMocks(page, { tree: { [HOME]: FILE_LIST_ENTRIES } })
+    await page.goto('/')
+
+    const row = page.getByRole('row', { name: /budget\.xlsx/i })
+    await expect(row).toBeVisible()
+    await row.click({ button: 'right' })
+
+    const items = page.getByRole('menuitem')
+    await expect(items).toHaveCount(2)
+    await expect(items.nth(0)).toHaveText(/encrypt file/i)
+    await expect(items.nth(1)).toHaveText(/open in file explorer/i)
+  })
+
+  test('in decrypt mode, right-clicking a .gpg file shows two items: Decrypt file, Open in file explorer', async ({
+    page,
+  }) => {
+    await injectMocks(page, { tree: { [HOME]: FILE_LIST_ENTRIES } })
+    await page.goto('/')
+
+    // Switch to decrypt mode
+    await page.getByRole('tab', { name: /decrypt/i }).click()
+
+    const row = page.getByRole('row', { name: /secret\.gpg/i })
+    await expect(row).toBeVisible()
+    await row.click({ button: 'right' })
+
+    const items = page.getByRole('menuitem')
+    await expect(items).toHaveCount(2)
+    await expect(items.nth(0)).toHaveText(/decrypt file/i)
+    await expect(items.nth(1)).toHaveText(/open in file explorer/i)
+  })
+
+  test('in both modes, right-clicking a directory row shows a single "Open in file explorer" item', async ({
+    page,
+  }) => {
+    await injectMocks(page, { tree: { [HOME]: FILE_LIST_ENTRIES } })
+    await page.goto('/')
+
+    // Encrypt mode
+    const dirRow = page.getByRole('row', { name: /documents/i })
+    await expect(dirRow).toBeVisible()
+    await dirRow.click({ button: 'right' })
+
+    const items = page.getByRole('menuitem')
+    await expect(items).toHaveCount(1)
+    await expect(items.first()).toHaveText(/open in file explorer/i)
+
+    // Close the menu by pressing Escape
+    await page.keyboard.press('Escape')
+
+    // Switch to decrypt mode
+    await page.getByRole('tab', { name: /decrypt/i }).click()
+
+    await dirRow.click({ button: 'right' })
+    const decryptItems = page.getByRole('menuitem')
+    await expect(decryptItems).toHaveCount(1)
+    await expect(decryptItems.first()).toHaveText(/open in file explorer/i)
+  })
+
+  test('clicking "Open in file explorer" on a file row calls openPath with the file path', async ({
+    page,
+  }) => {
+    await injectMocks(page, { tree: { [HOME]: FILE_LIST_ENTRIES } })
+    await page.goto('/')
+
+    const row = page.getByRole('row', { name: /budget\.xlsx/i })
+    await row.click({ button: 'right' })
+    await page.getByRole('menuitem', { name: /open in file explorer/i }).click()
+
+    const calls = await page.evaluate(
+      () => (window as { __E2E_OPEN_PATH_CALLS__?: string[] }).__E2E_OPEN_PATH_CALLS__
+    )
+    expect(calls).toContain(`${HOME}/budget.xlsx`)
+  })
+
+  test('clicking "Open in file explorer" on a directory row calls openPath with the directory path', async ({
+    page,
+  }) => {
+    await injectMocks(page, { tree: { [HOME]: FILE_LIST_ENTRIES } })
+    await page.goto('/')
+
+    const dirRow = page.getByRole('row', { name: /documents/i })
+    await dirRow.click({ button: 'right' })
+    await page.getByRole('menuitem', { name: /open in file explorer/i }).click()
+
+    const calls = await page.evaluate(
+      () => (window as { __E2E_OPEN_PATH_CALLS__?: string[] }).__E2E_OPEN_PATH_CALLS__
+    )
+    expect(calls).toContain(`${HOME}/Documents`)
+  })
+
+  test('failure to open a file shows a toast with error details', async ({ page }) => {
+    await injectMocks(page, {
+      tree: { [HOME]: FILE_LIST_ENTRIES },
+      openPathResult: 'error',
+      openPathErrorMessage: 'Permission denied: /home/testuser/budget.xlsx',
+    })
+    await page.goto('/')
+
+    const row = page.getByRole('row', { name: /budget\.xlsx/i })
+    await row.click({ button: 'right' })
+    await page.getByRole('menuitem', { name: /open in file explorer/i }).click()
+
+    await expect(page.getByText(/could not open/i)).toBeVisible()
+    await expect(page.getByText(/permission denied/i)).toBeVisible()
+  })
+})
+
 // ─── AC4: action does not interfere with existing Reload functionality ──────
 
 test.describe('Open in file explorer does not interfere with Reload', () => {

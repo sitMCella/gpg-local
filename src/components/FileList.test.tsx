@@ -556,7 +556,7 @@ describe('FileList', () => {
     expect(onNavigate).not.toHaveBeenCalled()
   })
 
-  it('directory rows do not show context menu items in encrypt mode', async () => {
+  it('in encrypt mode, directory rows show only "Open in file explorer" in context menu', async () => {
     const user = userEvent.setup()
     const { readDirectory } = await import('@/lib/platform')
     ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
@@ -568,11 +568,12 @@ describe('FileList', () => {
     const row = await screen.findByRole('row')
     await user.pointer({ target: row, keys: '[MouseRight]' })
 
+    expect(await screen.findByText('Open in file explorer')).toBeInTheDocument()
     expect(screen.queryByText('Encrypt file')).not.toBeInTheDocument()
     expect(screen.queryByText('Open file')).not.toBeInTheDocument()
   })
 
-  it('directory rows do not show context menu items in decrypt mode', async () => {
+  it('in decrypt mode, directory rows show only "Open in file explorer" in context menu', async () => {
     const user = userEvent.setup()
     const { readDirectory } = await import('@/lib/platform')
     ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
@@ -584,6 +585,7 @@ describe('FileList', () => {
     const row = await screen.findByRole('row')
     await user.pointer({ target: row, keys: '[MouseRight]' })
 
+    expect(await screen.findByText('Open in file explorer')).toBeInTheDocument()
     expect(screen.queryByText('Decrypt file')).not.toBeInTheDocument()
   })
 
@@ -609,6 +611,160 @@ describe('FileList', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
+  })
+
+  // ---- Feature 08 additions ----
+
+  it('in encrypt mode, a non-encrypted file context menu contains "Open in file explorer" as the last item', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'budget.xlsx', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    const items = await screen.findAllByRole('menuitem')
+    expect(items[items.length - 1]).toHaveTextContent('Open in file explorer')
+  })
+
+  it('in encrypt mode, a text file shows three context menu items in order: Open file, Encrypt file, Open in file explorer', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'notes.txt', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    const items = await screen.findAllByRole('menuitem')
+    expect(items).toHaveLength(3)
+    expect(items[0]).toHaveTextContent('Open file')
+    expect(items[1]).toHaveTextContent('Encrypt file')
+    expect(items[2]).toHaveTextContent('Open in file explorer')
+  })
+
+  it('in encrypt mode, a non-text file shows two context menu items in order: Encrypt file, Open in file explorer', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'budget.xlsx', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    const items = await screen.findAllByRole('menuitem')
+    expect(items).toHaveLength(2)
+    expect(items[0]).toHaveTextContent('Encrypt file')
+    expect(items[1]).toHaveTextContent('Open in file explorer')
+  })
+
+  it('in decrypt mode, a .gpg file context menu contains two items: Decrypt file, Open in file explorer', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'report.md.gpg', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="decrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    const items = await screen.findAllByRole('menuitem')
+    expect(items).toHaveLength(2)
+    expect(items[0]).toHaveTextContent('Decrypt file')
+    expect(items[1]).toHaveTextContent('Open in file explorer')
+  })
+
+  it('clicking "Open in file explorer" on a file row calls openFilePath with the entry path', async () => {
+    const user = userEvent.setup()
+    const { readDirectory, openFilePath } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'budget.xlsx', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    const explorerItem = await screen.findByText('Open in file explorer')
+    await user.click(explorerItem)
+
+    expect(openFilePath).toHaveBeenCalledWith('/home/user/budget.xlsx')
+  })
+
+  it('clicking "Open in file explorer" on a directory row calls openFilePath with the directory path', async () => {
+    const user = userEvent.setup()
+    const { readDirectory, openFilePath } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'Documents', isDirectory: true, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    const explorerItem = await screen.findByText('Open in file explorer')
+    await user.click(explorerItem)
+
+    expect(openFilePath).toHaveBeenCalledWith('/home/user/Documents')
+  })
+
+  it('when openFilePath rejects on "Open in file explorer", no error is thrown', async () => {
+    const user = userEvent.setup()
+    const { readDirectory, openFilePath } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'budget.xlsx', isDirectory: false, isSymlink: false },
+    ])
+    ;(openFilePath as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('Permission denied')
+    )
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const row = await screen.findByRole('row')
+    await user.pointer({ target: row, keys: '[MouseRight]' })
+
+    const explorerItem = await screen.findByText('Open in file explorer')
+    await user.click(explorerItem)
+
+    expect(openFilePath).toHaveBeenCalledWith('/home/user/budget.xlsx')
+  })
+
+  it('in encrypt mode, a .gpg file row (disabled) shows no context menu including "Open in file explorer"', async () => {
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'secret.gpg', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    await screen.findByRole('row')
+    expect(screen.queryByText('Open in file explorer')).not.toBeInTheDocument()
+  })
+
+  it('in decrypt mode, a non-encrypted file row (disabled) shows no context menu', async () => {
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'notes.txt', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="decrypt" onNavigate={vi.fn()} />)
+
+    await screen.findByRole('row')
+    expect(screen.queryByText('Open in file explorer')).not.toBeInTheDocument()
   })
 
   it('decrypt dialog close handler sets decryptTarget to null', async () => {
