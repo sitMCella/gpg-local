@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-08-11
+
+### Added
+
+- **Open in file explorer from file list** — right-click any non-disabled file or directory row in the file-list panel to reveal it in the OS's native file manager (Finder on macOS, Explorer on Windows, Nautilus on Linux). Available in both Encrypt and Decrypt modes. Directory rows, which previously had no context menu, now show a single "Open in file explorer" item.
+- **Platform abstraction for revealing files** — `revealInFileExplorer` in `src/lib/platform.ts` routes through `revealItemInDir` from `tauri-plugin-opener` in Tauri and falls back to a window-global mock for browser-based e2e testing.
+
+### Fixed
+
+- **Open in file explorer now reveals instead of opening** — the sidebar and file-list "Open in file explorer" action now correctly uses `revealItemInDir` (which reveals the item in the OS file manager) instead of `openPath` (which opened files with their default application).
+
 ## [0.1.2] - 2026-08-10
 
 ### Added
