@@ -6,12 +6,12 @@ import FolderTree from './FolderTree'
 
 vi.mock('@/lib/platform', () => ({
   readDirectory: vi.fn(),
-  openFilePath: vi.fn(),
+  revealInFileExplorer: vi.fn(),
 }))
 
-import { readDirectory, openFilePath } from '@/lib/platform'
+import { readDirectory, revealInFileExplorer } from '@/lib/platform'
 const mockReadDirectory = readDirectory as ReturnType<typeof vi.fn>
-const mockOpenFilePath = openFilePath as ReturnType<typeof vi.fn>
+const mockRevealInFileExplorer = revealInFileExplorer as ReturnType<typeof vi.fn>
 
 function renderTree(props: Parameters<typeof FolderTree>[0]) {
   return render(
@@ -24,9 +24,9 @@ function renderTree(props: Parameters<typeof FolderTree>[0]) {
 describe('FolderTree', () => {
   beforeEach(() => {
     mockReadDirectory.mockReset()
-    mockOpenFilePath.mockReset()
+    mockRevealInFileExplorer.mockReset()
     mockReadDirectory.mockResolvedValue([])
-    mockOpenFilePath.mockResolvedValue(undefined)
+    mockRevealInFileExplorer.mockResolvedValue(undefined)
   })
 
   it('renders the root node labelled with the last path segment', async () => {
@@ -185,24 +185,123 @@ describe('FolderTree', () => {
     expect(await screen.findByRole('menuitem', { name: /open in file explorer/i })).toBeInTheDocument()
   })
 
-  it('clicking "Open in file explorer" calls openFilePath with the node path', async () => {
+  it('clicking "Open in file explorer" calls revealInFileExplorer with the node path', async () => {
     const user = userEvent.setup()
     renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect: vi.fn() })
     const root = await screen.findByRole('treeitem', { name: /alice/ })
     await user.pointer({ keys: '[MouseRight]', target: root })
     const openItem = await screen.findByRole('menuitem', { name: /open in file explorer/i })
     await user.click(openItem)
-    expect(mockOpenFilePath).toHaveBeenCalledWith('/home/alice')
+    expect(mockRevealInFileExplorer).toHaveBeenCalledWith('/home/alice')
   })
 
-  it('when openFilePath rejects, the app does not crash', async () => {
+  it('when revealInFileExplorer rejects, the app does not crash', async () => {
     const user = userEvent.setup()
-    mockOpenFilePath.mockRejectedValueOnce(new Error('No default handler'))
+    mockRevealInFileExplorer.mockRejectedValueOnce(new Error('No default handler'))
     renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect: vi.fn() })
     const root = await screen.findByRole('treeitem', { name: /alice/ })
     await user.pointer({ keys: '[MouseRight]', target: root })
     const openItem = await screen.findByRole('menuitem', { name: /open in file explorer/i })
     await user.click(openItem)
-    expect(mockOpenFilePath).toHaveBeenCalledWith('/home/alice')
+    expect(mockRevealInFileExplorer).toHaveBeenCalledWith('/home/alice')
+  })
+
+  it('calls onSelect and expands when Enter is pressed on a node', async () => {
+    const user = userEvent.setup()
+    mockReadDirectory.mockResolvedValue([
+      { name: 'Documents', isDirectory: true, isSymlink: false },
+    ])
+    const onSelect = vi.fn()
+    renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect })
+    const docNode = await screen.findByRole('treeitem', { name: /Documents/ })
+    docNode.focus()
+    await user.keyboard('{Enter}')
+    expect(onSelect).toHaveBeenCalledWith('/home/alice/Documents')
+  })
+
+  it('calls onSelect and expands when Space is pressed on a node', async () => {
+    const user = userEvent.setup()
+    mockReadDirectory.mockResolvedValue([
+      { name: 'Documents', isDirectory: true, isSymlink: false },
+    ])
+    const onSelect = vi.fn()
+    renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect })
+    const docNode = await screen.findByRole('treeitem', { name: /Documents/ })
+    docNode.focus()
+    await user.keyboard(' ')
+    expect(onSelect).toHaveBeenCalledWith('/home/alice/Documents')
+  })
+
+  it('handles loadChildren error gracefully and sets children to empty array', async () => {
+    mockReadDirectory
+      .mockResolvedValueOnce([{ name: 'BadFolder', isDirectory: true, isSymlink: false }])
+      .mockRejectedValueOnce(new Error('Permission denied'))
+    const user = userEvent.setup()
+    renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect: vi.fn() })
+    const badNode = await screen.findByRole('treeitem', { name: /BadFolder/ })
+    await user.click(badNode)
+    await waitFor(() => expect(badNode).toHaveAttribute('aria-expanded', 'true'))
+  })
+
+  it('handles root loadChildren error gracefully', async () => {
+    mockReadDirectory.mockRejectedValue(new Error('Permission denied'))
+    renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect: vi.fn() })
+    const root = await screen.findByRole('treeitem', { name: /alice/ })
+    await waitFor(() => expect(root).toHaveAttribute('aria-expanded', 'true'))
+  })
+
+  it('toggles expanded to false when clicking already-loaded expanded node', async () => {
+    const user = userEvent.setup()
+    mockReadDirectory.mockResolvedValue([
+      { name: 'Documents', isDirectory: true, isSymlink: false },
+    ])
+    renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect: vi.fn() })
+    const root = await screen.findByRole('treeitem', { name: /alice/ })
+    await waitFor(() => expect(root).toHaveAttribute('aria-expanded', 'true'))
+    await user.click(root)
+    expect(root).toHaveAttribute('aria-expanded', 'false')
+    await user.click(root)
+    expect(root).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('filters out non-directory entries from tree', async () => {
+    mockReadDirectory.mockResolvedValue([
+      { name: 'Documents', isDirectory: true, isSymlink: false },
+      { name: 'file.txt', isDirectory: false, isSymlink: false },
+    ])
+    renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect: vi.fn() })
+    expect(await screen.findByText('Documents')).toBeInTheDocument()
+    expect(screen.queryByText('file.txt')).not.toBeInTheDocument()
+  })
+
+  it('sorts child directories alphabetically', async () => {
+    mockReadDirectory.mockResolvedValue([
+      { name: 'Zebra', isDirectory: true, isSymlink: false },
+      { name: 'Alpha', isDirectory: true, isSymlink: false },
+      { name: 'Middle', isDirectory: true, isSymlink: false },
+    ])
+    renderTree({ rootPath: '/home/alice', selectedPath: null, onSelect: vi.fn() })
+    await screen.findByText('Alpha')
+    const items = screen.getAllByRole('treeitem')
+    const names = items.map((i) => i.textContent)
+    expect(names).toEqual(['alice', 'Alpha', 'Middle', 'Zebra'])
+  })
+
+  it('handleReload sets children to empty array on error', async () => {
+    const user = userEvent.setup()
+    mockReadDirectory
+      .mockResolvedValueOnce([])
+      .mockRejectedValueOnce(new Error('Permission denied'))
+    renderTree({
+      rootPath: '/home/alice',
+      selectedPath: null,
+      onSelect: vi.fn(),
+      onRefreshRequest: vi.fn(),
+    })
+    const root = await screen.findByRole('treeitem', { name: /alice/ })
+    await user.pointer({ keys: '[MouseRight]', target: root })
+    const reloadItem = await screen.findByRole('menuitem', { name: /reload/i })
+    await user.click(reloadItem)
+    await waitFor(() => expect(root).toHaveAttribute('aria-expanded', 'true'))
   })
 })

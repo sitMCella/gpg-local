@@ -6,7 +6,7 @@ import { ContextMenuRoot, ContextMenuContent, ContextMenuItem } from '@/componen
 import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu'
 import { useDirectory } from '@/hooks/useDirectory'
 import { toast } from '@/components/ui/toast'
-import { openFilePath } from '@/lib/platform'
+import { openFilePath, revealInFileExplorer } from '@/lib/platform'
 import DecryptDialog from '@/components/DecryptDialog'
 import type { FsEntry } from '@/types/fs'
 import type { AppMode } from '@/components/ModeTabBar'
@@ -91,6 +91,7 @@ interface FileListItemProps {
   onEncryptRequest?: (entry: FsEntry) => void
   onDecryptRequest?: (entry: FsEntry) => void
   onOpenRequest?: (entry: FsEntry) => void
+  onOpenInExplorerRequest?: (entry: FsEntry) => void
 }
 
 function FileListItem({
@@ -101,6 +102,7 @@ function FileListItem({
   onEncryptRequest,
   onDecryptRequest,
   onOpenRequest,
+  onOpenInExplorerRequest,
 }: FileListItemProps) {
   const handleDoubleClick = () => {
     if (!disabled && entry.isDir) onNavigate(entry.path)
@@ -149,11 +151,24 @@ function FileListItem({
             <ContextMenuItem onClick={() => onOpenRequest?.(entry)}>Open file</ContextMenuItem>
           )}
           <ContextMenuItem onClick={() => onEncryptRequest?.(entry)}>Encrypt file</ContextMenuItem>
+          <ContextMenuItem onClick={() => onOpenInExplorerRequest?.(entry)}>
+            Open in file explorer
+          </ContextMenuItem>
         </ContextMenuContent>
       )}
       {mode === 'decrypt' && !entry.isDir && (
         <ContextMenuContent>
           <ContextMenuItem onClick={() => onDecryptRequest?.(entry)}>Decrypt file</ContextMenuItem>
+          <ContextMenuItem onClick={() => onOpenInExplorerRequest?.(entry)}>
+            Open in file explorer
+          </ContextMenuItem>
+        </ContextMenuContent>
+      )}
+      {entry.isDir && (
+        <ContextMenuContent>
+          <ContextMenuItem onClick={() => onOpenInExplorerRequest?.(entry)}>
+            Open in file explorer
+          </ContextMenuItem>
         </ContextMenuContent>
       )}
     </ContextMenuRoot>
@@ -181,6 +196,18 @@ export default function FileList({
   async function handleOpenRequest(entry: FsEntry) {
     try {
       await openFilePath(entry.path)
+    } catch (err) {
+      toast.add({
+        title: `Could not open ${entry.name}`,
+        description: String(err),
+        timeout: 4000,
+      })
+    }
+  }
+
+  async function handleOpenInExplorer(entry: FsEntry) {
+    try {
+      await revealInFileExplorer(entry.path)
     } catch (err) {
       toast.add({
         title: `Could not open ${entry.name}`,
@@ -255,6 +282,7 @@ export default function FileList({
                   onEncryptRequest={onEncryptRequest}
                   onDecryptRequest={setDecryptTarget}
                   onOpenRequest={handleOpenRequest}
+                  onOpenInExplorerRequest={handleOpenInExplorer}
                 />
               ))}
             </div>

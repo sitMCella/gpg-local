@@ -104,3 +104,16 @@ export async function openFilePath(path: string): Promise<void> {
     return win.__E2E_MOCK_OPEN_PATH__(path)
   }
 }
+
+export async function revealInFileExplorer(path: string): Promise<void> {
+  if (isTauri()) {
+    const { revealItemInDir } = await import('@tauri-apps/plugin-opener')
+    return revealItemInDir(path)
+  }
+  const win = window as unknown as {
+    __E2E_MOCK_REVEAL_IN_EXPLORER__?: (p: string) => Promise<void>
+  }
+  if (typeof window !== 'undefined' && win.__E2E_MOCK_REVEAL_IN_EXPLORER__) {
+    return win.__E2E_MOCK_REVEAL_IN_EXPLORER__(path)
+  }
+}

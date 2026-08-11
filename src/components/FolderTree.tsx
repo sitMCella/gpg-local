@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { ContextMenuRoot, ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu'
 import { cn } from '@/lib/utils'
-import { readDirectory, openFilePath } from '@/lib/platform'
+import { readDirectory, revealInFileExplorer } from '@/lib/platform'
 import { toast } from '@/components/ui/toast'
 import type { TreeNode } from '@/types/fs'
 
@@ -87,7 +87,7 @@ function FolderTreeNode({
 
   const handleOpenInExplorer = useCallback(async () => {
     try {
-      await openFilePath(node.path)
+      await revealInFileExplorer(node.path)
     } catch (err) {
       toast.add({
         title: `Could not open ${node.name}`,
