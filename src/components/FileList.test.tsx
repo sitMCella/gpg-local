@@ -791,4 +791,102 @@ describe('FileList', () => {
       expect(screen.queryByLabelText(/^passphrase$/i)).not.toBeInTheDocument()
     })
   })
+
+  // ---- Type-ahead selection ----
+
+  it('typeahead selects the first entry matching the typed letter', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'alpha.txt', isDirectory: false, isSymlink: false },
+      { name: 'report.md', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const rows = await screen.findAllByRole('row')
+    rows[0].focus()
+    await user.keyboard('r')
+
+    const reportRow = screen.getByText('report.md').closest('[role="row"]')
+    expect(reportRow).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('typeahead skips greyed-out disabled entries', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'report.gpg', isDirectory: false, isSymlink: false },
+      { name: 'report.md', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const rows = await screen.findAllByRole('row')
+    rows[1].focus()
+    await user.keyboard('r')
+
+    const reportGpgRow = screen.getByText('report.gpg').closest('[role="row"]')
+    const reportMdRow = screen.getByText('report.md').closest('[role="row"]')
+    expect(reportGpgRow).not.toHaveAttribute('aria-selected')
+    expect(reportMdRow).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('typeahead cycles through matches on repeated key press', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'data.txt', isDirectory: false, isSymlink: false },
+      { name: 'delta.txt', isDirectory: false, isSymlink: false },
+      { name: 'document.txt', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="encrypt" onNavigate={vi.fn()} />)
+
+    const rows = await screen.findAllByRole('row')
+    rows[0].focus()
+    await user.keyboard('d')
+    expect(screen.getByText('data.txt').closest('[role="row"]')).toHaveAttribute(
+      'aria-selected',
+      'true'
+    )
+
+    await user.keyboard('d')
+    expect(screen.getByText('delta.txt').closest('[role="row"]')).toHaveAttribute(
+      'aria-selected',
+      'true'
+    )
+
+    await user.keyboard('d')
+    expect(screen.getByText('document.txt').closest('[role="row"]')).toHaveAttribute(
+      'aria-selected',
+      'true'
+    )
+
+    await user.keyboard('d')
+    expect(screen.getByText('data.txt').closest('[role="row"]')).toHaveAttribute(
+      'aria-selected',
+      'true'
+    )
+  })
+
+  it('in decrypt mode, typeahead only matches encrypted files', async () => {
+    const user = userEvent.setup()
+    const { readDirectory } = await import('@/lib/platform')
+    ;(readDirectory as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'report.gpg', isDirectory: false, isSymlink: false },
+      { name: 'report.md', isDirectory: false, isSymlink: false },
+    ])
+
+    render(<FileList dirPath="/home/user" mode="decrypt" onNavigate={vi.fn()} />)
+
+    const rows = await screen.findAllByRole('row')
+    rows[0].focus()
+    await user.keyboard('r')
+
+    const reportGpgRow = screen.getByText('report.gpg').closest('[role="row"]')
+    const reportMdRow = screen.getByText('report.md').closest('[role="row"]')
+    expect(reportGpgRow).toHaveAttribute('aria-selected', 'true')
+    expect(reportMdRow).not.toHaveAttribute('aria-selected')
+  })
 })

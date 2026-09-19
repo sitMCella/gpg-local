@@ -1,5 +1,5 @@
 import { File, FileText, Folder, Loader2, Lock, RefreshCw } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ContextMenuRoot, ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
@@ -86,7 +86,10 @@ function RowContent({ entry }: { entry: FsEntry }) {
 interface FileListItemProps {
   entry: FsEntry
   disabled: boolean
+  selected: boolean
   mode: AppMode
+  rowRef: (path: string, node: HTMLDivElement | null) => void
+  onSelect: (entry: FsEntry) => void
   onNavigate: (path: string) => void
   onEncryptRequest?: (entry: FsEntry) => void
   onDecryptRequest?: (entry: FsEntry) => void
@@ -97,13 +100,20 @@ interface FileListItemProps {
 function FileListItem({
   entry,
   disabled,
+  selected,
   mode,
+  rowRef,
+  onSelect,
   onNavigate,
   onEncryptRequest,
   onDecryptRequest,
   onOpenRequest,
   onOpenInExplorerRequest,
 }: FileListItemProps) {
+  const handleClick = () => {
+    if (!disabled) onSelect(entry)
+  }
+
   const handleDoubleClick = () => {
     if (!disabled && entry.isDir) onNavigate(entry.path)
   }
@@ -119,7 +129,9 @@ function FileListItem({
     'flex items-center gap-3 px-4 py-1.5 text-sm rounded select-none outline-none',
     disabled
       ? 'opacity-40 cursor-not-allowed'
-      : 'hover:bg-accent hover:text-accent-foreground cursor-default focus-visible:ring-1 focus-visible:ring-ring',
+      : selected
+        ? 'bg-accent text-accent-foreground cursor-default focus-visible:ring-1 focus-visible:ring-ring'
+        : 'hover:bg-accent hover:text-accent-foreground cursor-default focus-visible:ring-1 focus-visible:ring-ring',
   ].join(' ')
 
   if (disabled) {
@@ -135,9 +147,12 @@ function FileListItem({
       <ContextMenuPrimitive.Trigger
         render={
           <div
+            ref={(node) => rowRef(entry.path, node)}
             role="row"
+            aria-selected={selected}
             tabIndex={0}
             className={rowClasses}
+            onClick={handleClick}
             onDoubleClick={handleDoubleClick}
             onKeyDown={handleKeyDown}
           >
@@ -184,10 +199,64 @@ export default function FileList({
 }: FileListProps) {
   const { entries, loading, error, read } = useDirectory()
   const [decryptTarget, setDecryptTarget] = useState<FsEntry | null>(null)
+  const [selectedPath, setSelectedPath] = useState<string | null>(null)
+  const rowNodes = useRef(new Map<string, HTMLDivElement>())
+  const typeahead = useRef({ buffer: '', time: 0 })
+
+  const dirKey = `${dirPath ?? ''}:${refreshKey ?? 0}`
+  const [prevDirKey, setPrevDirKey] = useState(dirKey)
+  if (dirKey !== prevDirKey) {
+    setPrevDirKey(dirKey)
+    setSelectedPath(null)
+  }
 
   useEffect(() => {
     if (dirPath) read(dirPath)
+    typeahead.current = { buffer: '', time: 0 }
   }, [dirPath, read, refreshKey])
+
+  function setRowNode(path: string, node: HTMLDivElement | null) {
+    if (node) rowNodes.current.set(path, node)
+    else rowNodes.current.delete(path)
+  }
+
+  function selectEntry(entry: FsEntry) {
+    setSelectedPath(entry.path)
+    rowNodes.current.get(entry.path)?.focus()
+  }
+
+  const TYPEAHEAD_TIMEOUT_MS = 800
+
+  function handleTypeahead(e: React.KeyboardEvent) {
+    const char = e.key
+    if (char.length !== 1 || char === ' ' || e.ctrlKey || e.metaKey || e.altKey) return
+
+    e.preventDefault()
+
+    const lowerChar = char.toLowerCase()
+    const state = typeahead.current
+    const now = Date.now()
+    if (now - state.time > TYPEAHEAD_TIMEOUT_MS) {
+      state.buffer = lowerChar
+    } else {
+      state.buffer += lowerChar
+    }
+    state.time = now
+
+    const singleCharCycle = state.buffer.split('').every((c) => c === state.buffer[0])
+    const query = singleCharCycle ? state.buffer[0] : state.buffer
+
+    const selectable = entries.filter((entry) => !isDisabled(entry, mode))
+    const matches = selectable.filter((entry) => entry.name.toLowerCase().startsWith(query))
+    if (matches.length === 0) return
+
+    const currentIndex = matches.findIndex((m) => m.path === selectedPath)
+    const next =
+      singleCharCycle && currentIndex >= 0
+        ? matches[(currentIndex + 1) % matches.length]
+        : (matches[currentIndex] ?? matches[0])
+    selectEntry(next)
+  }
 
   function refresh() {
     if (dirPath) read(dirPath)
@@ -271,13 +340,21 @@ export default function FileList({
 
         {!loading && entries.length > 0 && (
           <ScrollArea className="flex-1">
-            <div role="table" className="py-2 px-2" aria-label="File list">
+            <div
+              role="table"
+              className="py-2 px-2"
+              aria-label="File list"
+              onKeyDown={handleTypeahead}
+            >
               {entries.map((entry) => (
                 <FileListItem
                   key={entry.path}
                   entry={entry}
                   disabled={isDisabled(entry, mode)}
+                  selected={entry.path === selectedPath}
                   mode={mode}
+                  rowRef={setRowNode}
+                  onSelect={selectEntry}
                   onNavigate={onNavigate}
                   onEncryptRequest={onEncryptRequest}
                   onDecryptRequest={setDecryptTarget}
