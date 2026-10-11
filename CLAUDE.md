@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 @specs/features/06-refresh.md
 @specs/features/07-open-text-file.md
 @specs/features/08-open-directory.md
+@specs/features/09-gpg-core-crate.md
 
 ## Project motivation
 
@@ -38,6 +39,10 @@ gpg-local/
 │   └── src/
 │       ├── main.rs       # Tauri entry point
 │       └── lib.rs        # Command registrations
+├── crates/
+│   └── gpg-core/         # Tauri-free OpenPGP core (stream API), shared with Android
+│       ├── Cargo.toml    # Standalone crate (no root workspace)
+│       └── src/          # error, info, keyring, helpers, ops, tests
 ├── e2e/
 │   └── app.spec.ts       # Playwright end-to-end tests
 ├── public/               # Static files served as-is (favicon, icon sprites)
@@ -57,6 +62,8 @@ The Tauri core (`src-tauri/`) wraps the UI in an OS-native window. In developmen
 
 `vite.config.ts` doubles as the Vitest config: unit tests run in jsdom, use Vitest globals, and are picked up from `src/**/*.{test,spec}.{ts,tsx}`. The test setup file (`src/test/setup.ts`) imports `@testing-library/jest-dom` matchers globally.
 
+`crates/gpg-core/` is a standalone Rust library (no Tauri dependency) holding the OpenPGP logic: `Keyring`, `KeyringHelper`, `KeyInfo`/`cert_to_info`, and `encrypt`/`decrypt`/`list_keys`/`import_key`/`generate_key` over `Read`/`Write` streams. Errors are a typed `CoreError` whose `Display` strings are shown verbatim by the UI. It is not a Cargo workspace member; `src-tauri` will consume it as a path dependency (feature 10) and the Android app via UniFFI (feature 11).
+
 Playwright e2e tests live in `e2e/` and target `http://localhost:5173`. The Playwright config starts the Vite dev server automatically when running locally (`reuseExistingServer: true`), so `pnpm dev` does not need to be running beforehand.
 
 ## Commands
@@ -73,6 +80,13 @@ pnpm test               # Vitest unit tests (watch mode)
 pnpm test:coverage      # Vitest with v8 coverage report
 pnpm test:e2e           # Playwright e2e (auto-starts dev server)
 pnpm test:e2e:ui        # Playwright interactive UI
+```
+
+Rust core crate:
+
+```bash
+cargo test --manifest-path crates/gpg-core/Cargo.toml
+cargo clippy --manifest-path crates/gpg-core/Cargo.toml --all-targets -- -D warnings
 ```
 
 Run a single unit test file:
