@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GPG Local</string>
+    <string name="tab_encrypt">Encrypt</string>
+    <string name="tab_decrypt">Decrypt</string>
+    <string name="encrypt_placeholder">Choose a file to encrypt with a passphrase.</string>
+    <string name="decrypt_placeholder">Choose an encrypted file to decrypt with its passphrase.</string>
+    <string name="choose_file">Choose file</string>
+</resources>

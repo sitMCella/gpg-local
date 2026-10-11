@@ -13,6 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 @specs/features/09-gpg-core-crate.md
 @specs/features/10-tauri-core-integration.md
 @specs/features/11-uniffi-bindings.md
+@specs/features/12-android-scaffold.md
 
 ## Project motivation
 
@@ -54,6 +55,9 @@ gpg-local/
 │       ├── uniffi.toml   # Kotlin package com.gpglocal.core
 │       ├── build-android.sh  # cargo-ndk (3 ABIs) + uniffi-bindgen → dist/ (gitignored)
 │       └── src/          # lib (GpgKeyring object), error (GpgError), types, fd, tests
+├── android/              # Native Android app (Gradle, Kotlin, Jetpack Compose)
+│   ├── gpgcore/          # :gpgcore — Android library: runs build-android.sh, packages dist/ + JNA
+│   └── app/              # :app — Compose shell, GpgRepository, theme, tests
 ├── e2e/
 │   └── app.spec.ts       # Playwright end-to-end tests
 ├── public/               # Static files served as-is (favicon, icon sprites)
@@ -76,6 +80,8 @@ The Tauri core (`src-tauri/`) wraps the UI in an OS-native window. In developmen
 `crates/gpg-core/` is a standalone Rust library (no Tauri dependency) holding the OpenPGP logic: `Keyring`, `KeyringHelper`, `KeyInfo`/`cert_to_info`, and `encrypt`/`decrypt`/`list_keys`/`import_key`/`generate_key` over `Read`/`Write` streams. Errors are a typed `CoreError` whose `Display` strings are shown verbatim by the UI. It is not a Cargo workspace member; `src-tauri` consumes it as a path dependency (feature 10) and the Android app will via UniFFI (feature 11).
 
 `crates/gpg-core-ffi/` is a standalone `cdylib` + `rlib` that wraps `gpg-core` with UniFFI proc-macros (no UDL), so `gpg-core` itself has no `uniffi` dependency. It exports a `GpgKeyring` object (`listKeys`, `importKey`, `generateKey`, `encryptFd`, `decryptFd`, `encryptBytes`, `decryptBytes`) and a flat `GpgError` whose Kotlin `GpgException` messages equal the `CoreError` strings. The fd exports take ownership of both descriptors (Kotlin passes `ParcelFileDescriptor.detachFd()`) and always close them. Unix-only (macOS/Linux hosts). `.cargo/config.toml` forces 16 KB page alignment for the Android targets.
+
+`android/` is a standalone Gradle project (AGP 8.7, Kotlin 2.0, minSdk 26, compileSdk/targetSdk 35). `:gpgcore` runs `crates/gpg-core-ffi/build-android.sh` as the `buildRustCore` task (before `preBuild`, skipped when the Rust sources are unchanged) and adds `crates/gpg-core-ffi/dist/jniLibs` + `dist/kotlin` as source sets; `-Pgpglocal.skipRust=true` reuses an existing `dist/` without Cargo/NDK. `:app` (`com.gpglocal.app`) is a single-Activity Compose app: `AppContainer` (manual DI) lazily opens `GpgKeyring` in `filesDir/keyring/`, and `GpgRepository` runs every native call on `Dispatchers.IO` and maps `GpgException` to `GpgResult`/`GpgFailure` (messages kept verbatim). The keyring is supplied as `() -> GpgKeyringInterface` so JVM tests use a fake. Privacy defaults: no `uses-permission` in the merged manifest, `allowBackup=false` plus backup/data-extraction rules excluding all files, R8 keep rules for JNA/`com.gpglocal.core` in `gpgcore/consumer-rules.pro`.
 
 Playwright e2e tests live in `e2e/` and target `http://localhost:5173`. The Playwright config starts the Vite dev server automatically when running locally (`reuseExistingServer: true`), so `pnpm dev` does not need to be running beforehand.
 
@@ -104,6 +110,16 @@ cargo test --manifest-path src-tauri/Cargo.toml   # serde contract + fs_io tests
 cargo test --manifest-path crates/gpg-core-ffi/Cargo.toml
 cargo clippy --manifest-path crates/gpg-core-ffi/Cargo.toml --all-targets -- -D warnings
 crates/gpg-core-ffi/build-android.sh   # needs NDK r28+ (ANDROID_NDK_HOME) + cargo-ndk; outputs dist/jniLibs + dist/kotlin
+```
+
+Android app (JDK 17+, Android SDK 35, NDK 28.0.13004108, cargo-ndk):
+
+```bash
+cd android && ./gradlew assembleDebug                   # build debug APK (compiles Rust core first)
+cd android && ./gradlew installDebug                    # install on connected device/emulator
+cd android && ./gradlew test                            # JVM unit tests
+cd android && ./gradlew connectedDebugAndroidTest       # instrumented + Compose UI tests
+cd android && ./gradlew assembleDebug -Pgpglocal.skipRust=true   # reuse existing dist/
 ```
 
 Run a single unit test file:
