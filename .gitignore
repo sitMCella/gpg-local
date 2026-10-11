@@ -15,3 +15,7 @@ src-tauri/target/
 
 # gpg-core
 crates/gpg-core/target/
+
+# gpg-core-ffi
+crates/gpg-core-ffi/target/
+crates/gpg-core-ffi/dist/
