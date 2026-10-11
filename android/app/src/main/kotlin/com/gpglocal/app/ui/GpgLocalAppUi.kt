@@ -54,27 +54,19 @@ fun GpgLocalAppUi(navController: NavHostController = rememberNavController()) {
         ) { innerPadding ->
             NavHost(
                 navController = navController,
-                startDestination = Destination.start.route,
+                startDestination = Destination.start.pattern,
                 modifier = Modifier.padding(innerPadding),
             ) {
-                composable(Destination.Encrypt.route) {
+                composable(Destination.Encrypt.pattern, arguments = listOf(uriArgument())) {
                     EncryptScreen(
                         onBusyChange = { navigationLocked = it },
                         onDecryptInstead = { uri -> navController.navigateToDecrypt(uri) },
                     )
                 }
-                composable(
-                    Destination.decryptPattern,
-                    arguments = listOf(
-                        navArgument(Destination.ARG_URI) {
-                            type = NavType.StringType
-                            nullable = true
-                            defaultValue = null
-                        },
-                    ),
-                ) { entry ->
+                composable(Destination.Decrypt.pattern, arguments = listOf(uriArgument())) {
                     DecryptScreen(
-                        initialUri = entry.arguments?.getString(Destination.ARG_URI)?.let(Uri::parse),
+                        onBusyChange = { navigationLocked = it },
+                        onEncryptInstead = { uri -> navController.navigateToEncrypt(uri) },
                     )
                 }
             }
@@ -82,11 +74,28 @@ fun GpgLocalAppUi(navController: NavHostController = rememberNavController()) {
     }
 }
 
+private fun uriArgument() = navArgument(Destination.ARG_URI) {
+    type = NavType.StringType
+    nullable = true
+    defaultValue = null
+}
+
 private fun NavHostController.navigateToDecrypt(uri: Uri) {
-    navigate("${Destination.Decrypt.route}?${Destination.ARG_URI}=${Uri.encode(uri.toString())}") {
+    navigate(Destination.Decrypt.routeWith(uri)) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         // No restoreState: a restored entry would keep its old arguments instead of this URI.
+    }
+}
+
+/**
+ * Encrypt is the start destination and always on the back stack, so reusing its entry would keep the
+ * existing ViewModel, which only reads the URI argument when created. Clear the stack instead, so a
+ * fresh Encrypt entry receives the URI.
+ */
+private fun NavHostController.navigateToEncrypt(uri: Uri) {
+    navigate(Destination.Encrypt.routeWith(uri)) {
+        popUpTo(graph.id) { inclusive = true }
     }
 }
 

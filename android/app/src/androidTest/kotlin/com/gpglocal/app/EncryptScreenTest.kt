@@ -101,7 +101,7 @@ class EncryptScreenTest {
         pick(file("report.md", "hello"))
 
         composeRule.onNodeWithText("report.md").assertIsDisplayed()
-        composeRule.onNodeWithText(string(R.string.encrypt_output_name, "report.md.gpg")).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.output_name, "report.md.gpg")).assertIsDisplayed()
     }
 
     @Test
@@ -149,7 +149,7 @@ class EncryptScreenTest {
         val decrypted = keyring.use { it.decryptBytes(ciphertext, "correct horse") }
         assertArrayEquals(plaintext.toByteArray(), decrypted)
         // The form is reset, including the passphrase.
-        composeRule.onNodeWithText(string(R.string.encrypt_no_file)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.no_file_selected)).assertIsDisplayed()
     }
 
     @Test
@@ -192,7 +192,7 @@ class EncryptScreenTest {
         composeRule.onNodeWithTag("encrypt_submit").assertIsDisplayed()
         assertEquals(0, composeRule.onAllNodesWithText("Encryption failed.", substring = true).fetchSemanticsNodes().size)
         // Values survive: toggling visibility reveals what was typed.
-        composeRule.onAllNodesWithContentDescription(string(R.string.encrypt_show_passphrase))[0].performClick()
+        composeRule.onAllNodesWithContentDescription(string(R.string.show_passphrase))[0].performClick()
         composeRule.onNodeWithText("correct horse").assertIsDisplayed()
     }
 

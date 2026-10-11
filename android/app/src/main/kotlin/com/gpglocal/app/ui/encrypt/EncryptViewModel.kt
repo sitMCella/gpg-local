@@ -14,6 +14,7 @@ import com.gpglocal.app.data.FileEncryptor
 import com.gpglocal.app.data.GpgFailure
 import com.gpglocal.app.data.GpgResult
 import com.gpglocal.app.data.PickedDocument
+import com.gpglocal.app.ui.Destination
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -68,12 +69,19 @@ class EncryptViewModel(
     val events: Flow<EncryptEvent> = _events.receiveAsFlow()
 
     init {
-        // After process death the picked file comes back; the passphrase fields stay empty.
-        savedState.get<Uri>(KEY_INPUT_URI)?.let { uri ->
-            viewModelScope.launch {
-                runCatching { documents.describe(uri) }
-                    .onSuccess { doc -> _state.update { it.copy(input = doc) } }
-                    .onFailure { setInput(null) }
+        // "Encrypt it instead" on the Decrypt screen hands over its file as a nav argument. It is removed
+        // once consumed, so after process death the saved input URI (possibly changed since) wins.
+        val handedOver = savedState.remove<String>(KEY_HANDED_OVER_URI)
+        if (handedOver != null) {
+            onInputPicked(Uri.parse(handedOver))
+        } else {
+            // After process death the picked file comes back; the passphrase fields stay empty.
+            savedState.get<Uri>(KEY_INPUT_URI)?.let { uri ->
+                viewModelScope.launch {
+                    runCatching { documents.describe(uri) }
+                        .onSuccess { doc -> _state.update { it.copy(input = doc) } }
+                        .onFailure { setInput(null) }
+                }
             }
         }
     }
@@ -195,6 +203,9 @@ class EncryptViewModel(
 
     companion object {
         const val KEY_INPUT_URI = "input_uri"
+
+        /** Optional nav argument of the Encrypt route. */
+        const val KEY_HANDED_OVER_URI = Destination.ARG_URI
 
         val Factory = viewModelFactory {
             initializer {

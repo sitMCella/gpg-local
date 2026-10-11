@@ -275,6 +275,19 @@ class EncryptViewModelTest {
     }
 
     @Test
+    fun navArgumentUriIsPickedOnInit() = runTest(dispatcher) {
+        savedState[EncryptViewModel.KEY_HANDED_OVER_URI] = inputUri.toString()
+
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(inputUri, vm.state.value.input?.uri)
+        // Consumed once: after process death the saved input URI takes over.
+        assertFalse(savedState.contains(EncryptViewModel.KEY_HANDED_OVER_URI))
+        assertEquals(inputUri, savedState.get<Uri>(EncryptViewModel.KEY_INPUT_URI))
+    }
+
+    @Test
     fun outputPickedWithoutPassphraseAfterRestoreDeletesOutput() = runTest(dispatcher) {
         savedState[EncryptViewModel.KEY_INPUT_URI] = inputUri
         val vm = newViewModel()

@@ -25,14 +25,14 @@ class GpgLocalAppUiTest {
         composeRule.onNodeWithText(string(R.string.app_name)).assertIsDisplayed()
         composeRule.onNodeWithTag("nav_encrypt").assertIsSelected()
         composeRule.onNodeWithTag("nav_decrypt").assertIsNotSelected()
-        composeRule.onNodeWithText(string(R.string.encrypt_no_file)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.no_file_selected)).assertIsDisplayed()
     }
 
     @Test
     fun switchingToDecryptShowsDecryptScreen() {
         composeRule.onNodeWithTag("nav_decrypt").performClick()
 
-        composeRule.onNodeWithText(string(R.string.decrypt_placeholder)).assertIsDisplayed()
+        composeRule.onNodeWithTag("decrypt_submit").assertIsDisplayed()
         composeRule.onNodeWithTag("nav_decrypt").assertIsSelected()
         composeRule.onNodeWithTag("nav_encrypt").assertIsNotSelected()
     }
@@ -45,6 +45,6 @@ class GpgLocalAppUiTest {
         composeRule.activityRule.scenario.recreate()
 
         composeRule.onNodeWithTag("nav_decrypt").assertIsSelected()
-        composeRule.onNodeWithText(string(R.string.decrypt_placeholder)).assertIsDisplayed()
+        composeRule.onNodeWithTag("decrypt_submit").assertIsDisplayed()
     }
 }

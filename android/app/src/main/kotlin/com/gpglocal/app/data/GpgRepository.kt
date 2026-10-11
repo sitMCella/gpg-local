@@ -17,7 +17,7 @@ import kotlin.coroutines.cancellation.CancellationException
 class GpgRepository(
     private val keyring: () -> GpgKeyringInterface,
     private val io: CoroutineDispatcher,
-) : FileEncryptor {
+) : FileEncryptor, FileDecryptor {
     suspend fun listKeys(): GpgResult<List<KeyInfo>> = call { keyring().listKeys() }
 
     suspend fun importKey(armored: String): GpgResult<KeyInfo> = call { keyring().importKey(armored) }
@@ -45,7 +45,14 @@ class GpgRepository(
         keyring().encryptFd(input.detachFd(), output.detachFd(), emptyList(), passphrase)
     }
 
-    // decryptFd wrapper arrives with feature 14.
+    /** Decryption from [input] to [output] with [passphrase]. Ownership of both descriptors moves to Rust. */
+    override suspend fun decryptFd(
+        input: ParcelFileDescriptor,
+        output: ParcelFileDescriptor,
+        passphrase: String,
+    ): GpgResult<Unit> = call {
+        keyring().decryptFd(input.detachFd(), output.detachFd(), passphrase)
+    }
 
     private suspend fun <T> call(block: () -> T): GpgResult<T> = withContext(io) {
         try {
@@ -65,6 +72,17 @@ class GpgRepository(
  */
 interface FileEncryptor {
     suspend fun encryptFd(
+        input: ParcelFileDescriptor,
+        output: ParcelFileDescriptor,
+        passphrase: String,
+    ): GpgResult<Unit>
+}
+
+/**
+ * fd-based decryption, split from [GpgRepository] so ViewModels can be tested without the native library.
+ */
+interface FileDecryptor {
+    suspend fun decryptFd(
         input: ParcelFileDescriptor,
         output: ParcelFileDescriptor,
         passphrase: String,
