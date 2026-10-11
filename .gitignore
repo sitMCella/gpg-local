@@ -12,3 +12,6 @@ test-results
 
 # Tauri
 src-tauri/target/
+
+# gpg-core
+crates/gpg-core/target/
