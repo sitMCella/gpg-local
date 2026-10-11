@@ -25,7 +25,7 @@ class GpgLocalAppUiTest {
         composeRule.onNodeWithText(string(R.string.app_name)).assertIsDisplayed()
         composeRule.onNodeWithTag("nav_encrypt").assertIsSelected()
         composeRule.onNodeWithTag("nav_decrypt").assertIsNotSelected()
-        composeRule.onNodeWithText(string(R.string.encrypt_placeholder)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.encrypt_no_file)).assertIsDisplayed()
     }
 
     @Test

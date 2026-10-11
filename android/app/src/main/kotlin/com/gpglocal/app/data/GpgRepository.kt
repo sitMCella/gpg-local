@@ -1,5 +1,6 @@
 package com.gpglocal.app.data
 
+import android.os.ParcelFileDescriptor
 import com.gpglocal.core.GpgException
 import com.gpglocal.core.GpgKeyringInterface
 import com.gpglocal.core.KeyInfo
@@ -16,7 +17,7 @@ import kotlin.coroutines.cancellation.CancellationException
 class GpgRepository(
     private val keyring: () -> GpgKeyringInterface,
     private val io: CoroutineDispatcher,
-) {
+) : FileEncryptor {
     suspend fun listKeys(): GpgResult<List<KeyInfo>> = call { keyring().listKeys() }
 
     suspend fun importKey(armored: String): GpgResult<KeyInfo> = call { keyring().importKey(armored) }
@@ -33,7 +34,18 @@ class GpgRepository(
     suspend fun decryptBytes(data: ByteArray, passphrase: String): GpgResult<ByteArray> =
         call { keyring().decryptBytes(data, passphrase) }
 
-    // encryptFd/decryptFd wrappers (taking ParcelFileDescriptor and calling detachFd()) arrive with features 13/14.
+    /** Symmetric encryption from [input] to [output]. Ownership of both descriptors moves to Rust. */
+    override suspend fun encryptFd(
+        input: ParcelFileDescriptor,
+        output: ParcelFileDescriptor,
+        passphrase: String,
+    ): GpgResult<Unit> = call {
+        // detachFd() runs on the IO dispatcher right before the native call.
+        // Rust closes both fds on success and on error.
+        keyring().encryptFd(input.detachFd(), output.detachFd(), emptyList(), passphrase)
+    }
+
+    // decryptFd wrapper arrives with feature 14.
 
     private suspend fun <T> call(block: () -> T): GpgResult<T> = withContext(io) {
         try {
@@ -46,6 +58,17 @@ class GpgRepository(
             GpgResult.Failure(GpgFailure.Internal(e.message ?: e.javaClass.simpleName))
         }
     }
+}
+
+/**
+ * fd-based encryption, split from [GpgRepository] so ViewModels can be tested without the native library.
+ */
+interface FileEncryptor {
+    suspend fun encryptFd(
+        input: ParcelFileDescriptor,
+        output: ParcelFileDescriptor,
+        passphrase: String,
+    ): GpgResult<Unit>
 }
 
 internal fun GpgException.toFailure(): GpgFailure {

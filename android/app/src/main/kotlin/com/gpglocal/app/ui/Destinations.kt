@@ -20,5 +20,11 @@ enum class Destination(
     companion object {
         /** Matches the desktop default mode. */
         val start = Encrypt
+
+        /** Optional document URI handed to the Decrypt screen ("Decrypt it instead"). Consumed by feature 14. */
+        const val ARG_URI = "uri"
+
+        /** Route pattern registered in the NavHost for Decrypt; plain "decrypt" still matches it. */
+        val decryptPattern = "${Decrypt.route}?$ARG_URI={$ARG_URI}"
     }
 }

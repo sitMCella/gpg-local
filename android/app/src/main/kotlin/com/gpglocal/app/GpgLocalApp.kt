@@ -3,6 +3,7 @@ package com.gpglocal.app
 import android.app.Application
 import android.content.Context
 import android.os.StrictMode
+import com.gpglocal.app.data.DocumentRepository
 import com.gpglocal.app.data.GpgRepository
 import com.gpglocal.core.GpgKeyring
 import com.gpglocal.core.GpgKeyringInterface
@@ -28,7 +29,7 @@ class GpgLocalApp : Application() {
 }
 
 /**
- * Manual dependency graph. Two objects do not justify Hilt; revisit if the graph grows.
+ * Manual dependency graph. A handful of objects do not justify Hilt; revisit if the graph grows.
  */
 class AppContainer(context: Context) {
     private val appContext = context.applicationContext
@@ -38,4 +39,8 @@ class AppContainer(context: Context) {
     private val keyring: GpgKeyringInterface by lazy { GpgKeyring(appContext.filesDir.absolutePath) }
 
     val gpgRepository: GpgRepository by lazy { GpgRepository({ keyring }, Dispatchers.IO) }
+
+    val documentRepository: DocumentRepository by lazy {
+        DocumentRepository(appContext.contentResolver, Dispatchers.IO)
+    }
 }
