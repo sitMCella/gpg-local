@@ -3,17 +3,18 @@
     <string name="app_name">GPG Local</string>
     <string name="tab_encrypt">Encrypt</string>
     <string name="tab_decrypt">Decrypt</string>
-    <string name="decrypt_placeholder">Choose an encrypted file to decrypt with its passphrase.</string>
+
+    <!-- Shared by the Encrypt and Decrypt screens (ui/common). -->
     <string name="choose_file">Choose file</string>
+    <string name="no_file_selected">No file selected</string>
+    <string name="change_file">Change</string>
+    <string name="output_name">→ %1$s</string>
+    <string name="passphrase">Passphrase</string>
+    <string name="show_passphrase">Show passphrase</string>
+    <string name="hide_passphrase">Hide passphrase</string>
 
     <!-- Encrypt screen (feature 13). Validation and status texts match desktop feature 04. -->
-    <string name="encrypt_no_file">No file selected</string>
-    <string name="encrypt_change_file">Change</string>
-    <string name="encrypt_output_name">→ %1$s</string>
-    <string name="encrypt_passphrase">Passphrase</string>
     <string name="encrypt_confirm_passphrase">Confirm passphrase</string>
-    <string name="encrypt_show_passphrase">Show passphrase</string>
-    <string name="encrypt_hide_passphrase">Hide passphrase</string>
     <string name="encrypt_button">Encrypt</string>
     <string name="encrypt_error_empty">Passphrase must not be empty.</string>
     <string name="encrypt_error_too_short">Passphrase must be at least 8 characters.</string>
@@ -24,4 +25,17 @@
     <string name="encrypt_go_to_decrypt">Decrypt it instead</string>
     <string name="encrypt_failed">Encryption failed. (%1$s)</string>
     <string name="encrypt_cleanup_failed">The incomplete file %1$s could not be removed. Delete it manually.</string>
+
+    <!-- Decrypt screen (feature 14). Validation and status texts match desktop feature 05. -->
+    <string name="decrypt_button">Decrypt</string>
+    <string name="decrypt_error_empty">Passphrase must not be empty.</string>
+    <string name="decrypt_in_progress">Decrypting file, please wait…</string>
+    <string name="decrypt_failed">Decryption failed. Check your passphrase and try again. (%1$s)</string>
+    <string name="decrypt_success">%1$s decrypted → %2$s</string>
+    <string name="decrypt_open">Open</string>
+    <string name="decrypt_no_app">No app found to open %1$s</string>
+    <string name="decrypt_not_encrypted">Only .gpg and .pgp files can be decrypted.</string>
+    <string name="decrypt_go_to_encrypt">Encrypt it instead</string>
+    <string name="decrypt_plaintext_note">The decrypted file will be readable by apps that can access that folder.</string>
+    <string name="decrypt_cleanup_failed">The incomplete file %1$s could not be removed. Delete it manually.</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.gpglocal.app.ui
 
+import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lock
@@ -17,14 +18,20 @@ enum class Destination(
     Decrypt("decrypt", R.string.tab_decrypt, Icons.Outlined.LockOpen),
     ;
 
+    /**
+     * Route pattern registered in the NavHost, with an optional document URI handed over from the other
+     * screen ("Decrypt it instead" / "Encrypt it instead"). The plain route still matches it.
+     */
+    val pattern: String get() = "$route?$ARG_URI={$ARG_URI}"
+
+    /** Route that opens this destination with [uri] preselected. */
+    fun routeWith(uri: Uri): String = "$route?$ARG_URI=${Uri.encode(uri.toString())}"
+
     companion object {
         /** Matches the desktop default mode. */
         val start = Encrypt
 
-        /** Optional document URI handed to the Decrypt screen ("Decrypt it instead"). Consumed by feature 14. */
+        /** Optional, URL-encoded document URI. Read by the ViewModels from their SavedStateHandle. */
         const val ARG_URI = "uri"
-
-        /** Route pattern registered in the NavHost for Decrypt; plain "decrypt" still matches it. */
-        val decryptPattern = "${Decrypt.route}?$ARG_URI={$ARG_URI}"
     }
 }
