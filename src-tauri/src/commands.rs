@@ -1,45 +1,28 @@
-use sequoia_openpgp::parse::Parse;
-use sequoia_openpgp::Cert;
+use gpg_core::{CoreError, EncryptParams, Keyring};
 use tauri::Manager;
 
+use crate::fs_io::{open_input, write_atomically};
 use crate::types::{DecryptOptions, EncryptOptions, KeyInfo};
 
-fn open_keyring(app: &tauri::AppHandle) -> anyhow::Result<crate::keyring::Keyring> {
-    let data_dir = app.path().app_data_dir()?;
-    crate::keyring::Keyring::open(data_dir)
+fn open_keyring(app: &tauri::AppHandle) -> Result<Keyring, String> {
+    let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    Keyring::open(data_dir).map_err(|e| e.to_string())
 }
 
-pub(crate) fn cert_to_info(cert: &Cert) -> KeyInfo {
-    KeyInfo {
-        fingerprint: cert.fingerprint().to_hex(),
-        user_ids: cert
-            .userids()
-            .map(|u| String::from_utf8_lossy(u.value()).into_owned())
-            .collect(),
-        has_secret: cert.is_tsk(),
-        created_at: cert
-            .primary_key()
-            .creation_time()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs() as i64)
-            .unwrap_or(0),
-    }
+fn err(e: CoreError) -> String {
+    e.to_string()
 }
 
 #[tauri::command]
 pub async fn list_keys(app: tauri::AppHandle) -> Result<Vec<KeyInfo>, String> {
-    let keyring = open_keyring(&app).map_err(|e| e.to_string())?;
-    let certs = keyring.load_all().map_err(|e| e.to_string())?;
-    Ok(certs.iter().map(cert_to_info).collect())
+    let keyring = open_keyring(&app)?;
+    blocking(move || gpg_core::list_keys(&keyring).map_err(err)).await
 }
 
 #[tauri::command]
 pub async fn import_key(app: tauri::AppHandle, armored: String) -> Result<KeyInfo, String> {
-    let cert = Cert::from_bytes(armored.as_bytes()).map_err(|e| e.to_string())?;
-    let info = cert_to_info(&cert);
-    let keyring = open_keyring(&app).map_err(|e| e.to_string())?;
-    keyring.store(&cert).map_err(|e| e.to_string())?;
-    Ok(info)
+    let keyring = open_keyring(&app)?;
+    blocking(move || gpg_core::import_key(&keyring, &armored).map_err(err)).await
 }
 
 #[tauri::command]
@@ -49,102 +32,47 @@ pub async fn generate_key(
     email: String,
     passphrase: String,
 ) -> Result<KeyInfo, String> {
-    use sequoia_openpgp::cert::CertBuilder;
-
-    let uid = format!("{name} <{email}>");
-    let (cert, _revocation) = CertBuilder::new()
-        .add_userid(uid)
-        .add_signing_subkey()
-        .add_transport_encryption_subkey()
-        .set_password(Some(passphrase.into()))
-        .generate()
-        .map_err(|e| e.to_string())?;
-
-    let info = cert_to_info(&cert);
-    let keyring = open_keyring(&app).map_err(|e| e.to_string())?;
-    keyring.store(&cert).map_err(|e| e.to_string())?;
-    Ok(info)
+    let keyring = open_keyring(&app)?;
+    blocking(move || gpg_core::generate_key(&keyring, &name, &email, &passphrase).map_err(err))
+        .await
 }
 
 #[tauri::command]
 pub async fn encrypt_file(app: tauri::AppHandle, options: EncryptOptions) -> Result<(), String> {
-    use sequoia_openpgp::crypto::Password;
-    use sequoia_openpgp::policy::StandardPolicy;
-    use sequoia_openpgp::serialize::stream::{Encryptor2, LiteralWriter, Message};
-    use std::io::Write;
-
-    let policy = &StandardPolicy::new();
-    let keyring = open_keyring(&app).map_err(|e| e.to_string())?;
-
-    let recipients: Vec<Cert> = options
-        .recipient_fingerprints
-        .iter()
-        .map(|fp| {
-            keyring
-                .find(fp)
-                .map_err(|e| e.to_string())?
-                .ok_or_else(|| format!("key not found: {fp}"))
+    let keyring = open_keyring(&app)?;
+    blocking(move || {
+        let params = EncryptParams {
+            recipient_fingerprints: &options.recipient_fingerprints,
+            passphrase: options.passphrase.as_deref(),
+        };
+        let mut input = open_input(&options.input_path)?;
+        write_atomically(&options.output_path, |out| {
+            gpg_core::encrypt(&keyring, params, &mut input, out).map_err(err)
         })
-        .collect::<Result<_, String>>()?;
-
-    let recipient_keys: Vec<_> = recipients
-        .iter()
-        .flat_map(|cert| {
-            cert.keys()
-                .with_policy(policy, None)
-                .supported()
-                .alive()
-                .revoked(false)
-                .for_transport_encryption()
-        })
-        .collect();
-
-    if recipient_keys.is_empty() && options.passphrase.is_none() {
-        return Err("No recipients or passphrase specified".to_string());
-    }
-
-    let plaintext = std::fs::read(&options.input_path).map_err(|e| e.to_string())?;
-    let mut output = Vec::new();
-
-    let message = Message::new(&mut output);
-    let mut encryptor = Encryptor2::for_recipients(message, recipient_keys);
-    if let Some(pw) = &options.passphrase {
-        encryptor = encryptor.add_passwords([Password::from(pw.as_str())]);
-    }
-    let message = encryptor.build().map_err(|e| e.to_string())?;
-    let mut message = LiteralWriter::new(message)
-        .build()
-        .map_err(|e| e.to_string())?;
-    message.write_all(&plaintext).map_err(|e| e.to_string())?;
-    message.finalize().map_err(|e| e.to_string())?;
-
-    std::fs::write(&options.output_path, output).map_err(|e| e.to_string())?;
-    Ok(())
+    })
+    .await
 }
 
 #[tauri::command]
 pub async fn decrypt_file(app: tauri::AppHandle, options: DecryptOptions) -> Result<(), String> {
-    use sequoia_openpgp::parse::stream::DecryptorBuilder;
-    use sequoia_openpgp::policy::StandardPolicy;
+    let keyring = open_keyring(&app)?;
+    blocking(move || {
+        let input = open_input(&options.input_path)?;
+        write_atomically(&options.output_path, |out| {
+            gpg_core::decrypt(&keyring, &options.passphrase, input, out).map_err(err)
+        })
+    })
+    .await
+}
 
-    let policy = &StandardPolicy::new();
-    let keyring = open_keyring(&app).map_err(|e| e.to_string())?;
-    let all_certs = keyring.load_all().map_err(|e| e.to_string())?;
-    let ciphertext = std::fs::read(&options.input_path).map_err(|e| e.to_string())?;
-
-    let helper = crate::helpers::KeyringHelper {
-        certs: all_certs,
-        passphrase: options.passphrase.into(),
-    };
-
-    let mut decryptor = DecryptorBuilder::from_bytes(&ciphertext)
+/// Runs blocking crypto and file I/O on Tauri's blocking thread pool so the
+/// async runtime thread stays free.
+async fn blocking<T, F>(f: F) -> Result<T, String>
+where
+    F: FnOnce() -> Result<T, String> + Send + 'static,
+    T: Send + 'static,
+{
+    tauri::async_runtime::spawn_blocking(f)
+        .await
         .map_err(|e| e.to_string())?
-        .with_policy(policy, None, helper)
-        .map_err(|e| e.to_string())?;
-
-    let mut plaintext = Vec::new();
-    std::io::copy(&mut decryptor, &mut plaintext).map_err(|e| e.to_string())?;
-
-    std::fs::write(&options.output_path, plaintext).map_err(|e| e.to_string())?;
-    Ok(())
 }
