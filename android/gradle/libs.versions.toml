@@ -7,6 +7,7 @@ lifecycle = "2.8.7"
 navigationCompose = "2.8.5"
 coroutines = "1.9.0"
 jna = "5.14.0"
+androidxAnnotation = "1.8.1"
 junit = "4.13.2"
 androidxTestRunner = "1.6.2"
 androidxTestExt = "1.2.1"
@@ -15,6 +16,7 @@ espresso = "3.6.1"
 robolectric = "4.14.1"
 
 [libraries]
+androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "androidxAnnotation" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
 compose-ui = { module = "androidx.compose.ui:ui" }
