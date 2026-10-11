@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.Intents.intending
@@ -108,15 +109,15 @@ class EncryptScreenTest {
     fun validationMessagesMatchDesktop() {
         pick(file("report.md", "hello"))
 
-        composeRule.onNodeWithTag("encrypt_submit").performClick()
+        composeRule.onNodeWithTag("encrypt_submit").performScrollTo().performClick()
         waitForText("Passphrase must not be empty.")
 
         enterPassphrase("short")
-        composeRule.onNodeWithTag("encrypt_submit").performClick()
+        composeRule.onNodeWithTag("encrypt_submit").performScrollTo().performClick()
         waitForText("Passphrase must be at least 8 characters.")
 
         composeRule.onNodeWithTag("encrypt_passphrase").performTextInput("-long-enough")
-        composeRule.onNodeWithTag("encrypt_submit").performClick()
+        composeRule.onNodeWithTag("encrypt_submit").performScrollTo().performClick()
         waitForText("Passphrases do not match.")
     }
 
@@ -140,7 +141,7 @@ class EncryptScreenTest {
         stubCreateDocument(Uri.fromFile(output))
         enterPassphrase("correct horse")
 
-        composeRule.onNodeWithTag("encrypt_submit").performClick()
+        composeRule.onNodeWithTag("encrypt_submit").performScrollTo().performClick()
         waitForText("report.md encrypted → report.md.gpg")
 
         val ciphertext = output.readBytes()
@@ -160,7 +161,7 @@ class EncryptScreenTest {
         stubCreateDocument(Uri.fromFile(output))
         enterPassphrase("correct horse")
 
-        composeRule.onNodeWithTag("encrypt_submit").performClick()
+        composeRule.onNodeWithTag("encrypt_submit").performScrollTo().performClick()
         composeRule.waitUntil(TIMEOUT_MS) {
             composeRule.onAllNodesWithTag("encrypt_failure").fetchSemanticsNodes().isNotEmpty()
         }
@@ -186,14 +187,14 @@ class EncryptScreenTest {
         stubCreateDocument(null)
         enterPassphrase("correct horse")
 
-        composeRule.onNodeWithTag("encrypt_submit").performClick()
+        composeRule.onNodeWithTag("encrypt_submit").performScrollTo().performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithTag("encrypt_submit").assertIsDisplayed()
+        composeRule.onNodeWithTag("encrypt_submit").performScrollTo().assertIsDisplayed()
         assertEquals(0, composeRule.onAllNodesWithText("Encryption failed.", substring = true).fetchSemanticsNodes().size)
         // Values survive: toggling visibility reveals what was typed.
-        composeRule.onAllNodesWithContentDescription(string(R.string.show_passphrase))[0].performClick()
-        composeRule.onNodeWithText("correct horse").assertIsDisplayed()
+        composeRule.onAllNodesWithContentDescription(string(R.string.show_passphrase))[0].performScrollTo().performClick()
+        composeRule.onNodeWithText("correct horse").performScrollTo().assertIsDisplayed()
     }
 
     @Test
