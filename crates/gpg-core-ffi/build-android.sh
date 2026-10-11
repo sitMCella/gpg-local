@@ -15,16 +15,17 @@ LLVM_STRIP=$(ls "$ANDROID_NDK_HOME"/toolchains/llvm/prebuilt/*/bin/llvm-strip | 
 
 # 1. Native libraries per ABI (minSdk 26 matches the Android app).
 #    uniffi-bindgen reads its metadata from the ELF symbol table (.symtab), so
-#    keep symbols here (only debug info is dropped) and strip after step 2.
+#    keep symbols in target/ (only debug info is dropped) and strip in step 3.
+#    cargo-ndk 3.x strips the copies it puts in $OUT, so step 2 reads target/.
 CARGO_PROFILE_RELEASE_STRIP=debuginfo cargo ndk \
   -t arm64-v8a -t armeabi-v7a -t x86_64 \
   --platform 26 \
   -o "$OUT/jniLibs" \
   build --release --locked
 
-# 2. Kotlin bindings from the compiled library's metadata
+# 2. Kotlin bindings from the unstripped library's metadata
 cargo run --release --locked --bin uniffi-bindgen -- generate \
-  --library "$OUT/jniLibs/arm64-v8a/libgpg_core_ffi.so" \
+  --library "${CARGO_TARGET_DIR:-target}/aarch64-linux-android/release/libgpg_core_ffi.so" \
   --language kotlin \
   --config uniffi.toml \
   --out-dir "$OUT/kotlin"
