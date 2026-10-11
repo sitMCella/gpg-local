@@ -89,7 +89,7 @@ apksigner verify --print-certs GPG-Local_<version>_android.apk
 The `Signer #1 certificate SHA-256 digest` must equal:
 
 ```
-<to be filled in when the upload keystore is created>
+SHA256: BA:D2:B6:63:FC:A3:C5:CC:E1:B2:F4:BE:54:DC:6C:FD:D3:87:1D:8F:32:72:F5:21:65:D8:C4:0A:1E:23:01:3F
 ```
 
 Android refuses to upgrade an installed app with an APK signed by a different key, so every future release keeps this signer.

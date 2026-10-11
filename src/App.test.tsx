@@ -45,7 +45,6 @@ describe('App', () => {
 
     render(<App />)
     await screen.findByRole('tree')
-
     ;(getHomeDir as ReturnType<typeof vi.fn>).mockResolvedValue('/home/user')
     await user.click(screen.getByRole('button', { name: /go to home directory/i }))
 
@@ -120,7 +119,9 @@ describe('App', () => {
     render(<App />)
     await screen.findByRole('tree')
 
-    const initialCallCount = mock.mock.calls.length
-    expect(initialCallCount).toBeGreaterThan(0)
+    // readDirectory runs in passive effects, which can flush after the tree first renders.
+    await waitFor(() => {
+      expect(mock).toHaveBeenCalled()
+    })
   })
 })
