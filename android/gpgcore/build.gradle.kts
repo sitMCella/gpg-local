@@ -69,6 +69,7 @@ tasks.named("preBuild") { dependsOn(buildRustCore, checkRustDist) }
 dependencies {
     api("${libs.jna.get()}@aar") // JNA with Android native dispatch libs
     implementation(libs.coroutines.android)
+    implementation(libs.androidx.annotation) // @RequiresApi in the generated bindings
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext)
     androidTestImplementation(libs.junit)

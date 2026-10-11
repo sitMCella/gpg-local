@@ -17,6 +17,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.Lifecycle
@@ -117,7 +118,7 @@ class ShareActivityTest {
         stubCreateDocument(output)
         composeRule.onNodeWithTag("encrypt_passphrase").performTextInput(passphrase)
         composeRule.onNodeWithTag("encrypt_confirm").performTextInput(passphrase)
-        composeRule.onNodeWithTag("encrypt_submit").performClick()
+        composeRule.onNodeWithTag("encrypt_submit").performScrollTo().performClick()
         waitForTag("share_result_title")
     }
 
@@ -201,7 +202,7 @@ class ShareActivityTest {
         stubCreateDocument(output)
 
         composeRule.onNodeWithTag("decrypt_passphrase").performTextInput("correct horse")
-        composeRule.onNodeWithTag("decrypt_submit").performClick()
+        composeRule.onNodeWithTag("decrypt_submit").performScrollTo().performClick()
         waitForTag("share_result_title")
 
         assertArrayEquals("attack at dawn".toByteArray(), output.readBytes())
@@ -265,13 +266,13 @@ class ShareActivityTest {
         waitForTag("encrypt_file_name")
         composeRule.onNodeWithTag("encrypt_file_name").assertTextEquals("report.md")
         // Same process: the typed passphrase is kept in the ViewModel.
-        composeRule.onAllNodesWithContentDescription(string(R.string.show_passphrase))[0].performClick()
-        composeRule.onNodeWithText("correct horse").assertIsDisplayed()
+        composeRule.onAllNodesWithContentDescription(string(R.string.show_passphrase))[0].performScrollTo().performClick()
+        composeRule.onNodeWithText("correct horse").performScrollTo().assertIsDisplayed()
 
         val output = File(dir, "report.md.gpg")
         stubCreateDocument(output)
         composeRule.onNodeWithTag("encrypt_confirm").performTextInput("correct horse")
-        composeRule.onNodeWithTag("encrypt_submit").performClick()
+        composeRule.onNodeWithTag("encrypt_submit").performScrollTo().performClick()
         waitForTag("share_result_title")
 
         scenario!!.recreate()
@@ -289,7 +290,7 @@ class ShareActivityTest {
         stubCreateDocument(File(dir, "slow-report.md.gpg"))
         composeRule.onNodeWithTag("encrypt_passphrase").performTextInput("correct horse")
         composeRule.onNodeWithTag("encrypt_confirm").performTextInput("correct horse")
-        composeRule.onNodeWithTag("encrypt_submit").performClick()
+        composeRule.onNodeWithTag("encrypt_submit").performScrollTo().performClick()
         waitForTag("encrypt_progress")
 
         composeRule.onNodeWithTag("share_close").assertIsNotEnabled()

@@ -1,3 +1,6 @@
 [bindings.kotlin]
 package_name = "com.gpglocal.core"
 cdylib_name = "gpg_core_ffi"
+# Android-only cleaner: SystemCleaner on API 34+, JNA cleaner below (minSdk 26).
+# The default JVM cleaner calls java.lang.ref.Cleaner (API 33), which fails lint NewApi.
+android = true

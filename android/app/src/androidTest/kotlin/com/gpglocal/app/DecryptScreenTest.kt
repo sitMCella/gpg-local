@@ -18,6 +18,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.text.AnnotatedString
 import androidx.test.espresso.intent.Intents.intended
@@ -114,7 +115,7 @@ class DecryptScreenTest {
         pick(input)
         stubCreateDocument(Uri.fromFile(output))
         composeRule.onNodeWithTag("decrypt_passphrase").performTextInput(passphrase)
-        composeRule.onNodeWithTag("decrypt_submit").performClick()
+        composeRule.onNodeWithTag("decrypt_submit").performScrollTo().performClick()
     }
 
     private fun waitForText(text: String) = composeRule.waitUntil(TIMEOUT_MS) {
@@ -187,7 +188,7 @@ class DecryptScreenTest {
         openDecryptTab()
         pick(file("report.md.gpg", byteArrayOf(1)))
 
-        composeRule.onNodeWithTag("decrypt_submit").performClick()
+        composeRule.onNodeWithTag("decrypt_submit").performScrollTo().performClick()
 
         waitForText("Passphrase must not be empty.")
     }
@@ -229,7 +230,7 @@ class DecryptScreenTest {
         stubCreateDocument(null)
         composeRule.onNodeWithTag("decrypt_passphrase").performTextInput("correct horse")
 
-        composeRule.onNodeWithTag("decrypt_submit").performClick()
+        composeRule.onNodeWithTag("decrypt_submit").performScrollTo().performClick()
         composeRule.waitForIdle()
 
         intended(
