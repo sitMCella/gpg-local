@@ -3,7 +3,25 @@
     <string name="app_name">GPG Local</string>
     <string name="tab_encrypt">Encrypt</string>
     <string name="tab_decrypt">Decrypt</string>
-    <string name="encrypt_placeholder">Choose a file to encrypt with a passphrase.</string>
     <string name="decrypt_placeholder">Choose an encrypted file to decrypt with its passphrase.</string>
     <string name="choose_file">Choose file</string>
+
+    <!-- Encrypt screen (feature 13). Validation and status texts match desktop feature 04. -->
+    <string name="encrypt_no_file">No file selected</string>
+    <string name="encrypt_change_file">Change</string>
+    <string name="encrypt_output_name">→ %1$s</string>
+    <string name="encrypt_passphrase">Passphrase</string>
+    <string name="encrypt_confirm_passphrase">Confirm passphrase</string>
+    <string name="encrypt_show_passphrase">Show passphrase</string>
+    <string name="encrypt_hide_passphrase">Hide passphrase</string>
+    <string name="encrypt_button">Encrypt</string>
+    <string name="encrypt_error_empty">Passphrase must not be empty.</string>
+    <string name="encrypt_error_too_short">Passphrase must be at least 8 characters.</string>
+    <string name="encrypt_error_mismatch">Passphrases do not match.</string>
+    <string name="encrypt_in_progress">Encrypting file, please wait…</string>
+    <string name="encrypt_success">%1$s encrypted → %2$s</string>
+    <string name="encrypt_already_encrypted">This file is already encrypted.</string>
+    <string name="encrypt_go_to_decrypt">Decrypt it instead</string>
+    <string name="encrypt_failed">Encryption failed. (%1$s)</string>
+    <string name="encrypt_cleanup_failed">The incomplete file %1$s could not be removed. Delete it manually.</string>
 </resources>
