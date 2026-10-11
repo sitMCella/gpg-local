@@ -11,10 +11,13 @@ For installation instructions, usage guides, and troubleshooting, see the [Wiki]
 ## Architecture
 
 ```
-src/           React + TypeScript UI (Vite bundled)
-src-tauri/     Tauri 2 Rust core (window, OS integration, GPG invocation)
-e2e/           Playwright end-to-end tests (run against Vite dev server)
-public/        Static assets served as-is (SVG icon sprite)
+src/                  React + TypeScript UI (Vite bundled)
+src-tauri/            Tauri 2 Rust shell (window, OS integration, calls gpg-core)
+crates/gpg-core/      Shared OpenPGP core (Rust, no Tauri) used by desktop and Android
+crates/gpg-core-ffi/  UniFFI bindings: libgpg_core_ffi.so + Kotlin API for Android
+android/              Native Android app (Kotlin, Jetpack Compose)
+e2e/                  Playwright end-to-end tests (run against Vite dev server)
+public/               Static assets served as-is (SVG icon sprite)
 ```
 
 **Stack:**
@@ -90,6 +93,49 @@ The `Signer #1 certificate SHA-256 digest` must equal:
 ```
 
 Android refuses to upgrade an installed app with an APK signed by a different key, so every future release keeps this signer.
+
+### Building from source
+
+**Prerequisites** (macOS or Linux host; the FFI crate is Unix-only):
+
+- JDK 17+
+- Android SDK with platform 35 and build-tools 35, located through `ANDROID_HOME` or `sdk.dir=...` in `android/local.properties`
+- Android NDK `28.0.13004108` (SDK Manager, or `sdkmanager "ndk;28.0.13004108"`)
+- Rust stable with the Android targets and `cargo-ndk`:
+  ```bash
+  rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
+  cargo install cargo-ndk --version ^3.5 --locked
+  ```
+
+**Build, install and test** (Gradle compiles the Rust core and generates the Kotlin bindings before building the app):
+
+```bash
+cd android
+./gradlew assembleDebug                  # debug APK → app/build/outputs/apk/debug/app-debug.apk
+./gradlew installDebug                   # install on a connected device or emulator
+./gradlew test                           # JVM unit tests
+./gradlew connectedDebugAndroidTest      # instrumented + Compose UI tests (device or emulator)
+./gradlew lintDebug                      # Android Lint
+./gradlew assembleRelease                # minified release APK (unsigned locally, see Android signing key)
+```
+
+**Native library only / skipping Rust:**
+
+```bash
+crates/gpg-core-ffi/build-android.sh     # needs ANDROID_NDK_HOME; writes crates/gpg-core-ffi/dist/
+cd android && ./gradlew assembleDebug -Pgpglocal.skipRust=true   # reuse an existing dist/, no Cargo/NDK
+```
+
+`dist/` can also be downloaded as the `gpg-core-ffi-dist` artifact of an Android CI run.
+
+**Rust core checks:**
+
+```bash
+cargo test --manifest-path crates/gpg-core/Cargo.toml
+cargo test --manifest-path crates/gpg-core-ffi/Cargo.toml
+cargo clippy --manifest-path crates/gpg-core-ffi/Cargo.toml --all-targets -- -D warnings
+cargo test --manifest-path crates/gpg-core/Cargo.toml --features gpg-interop-tests -- interop   # needs gpg on PATH
+```
 
 ## Releasing a new version
 
