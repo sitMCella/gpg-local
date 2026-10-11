@@ -69,19 +69,43 @@ pnpm install
 | `pnpm test:e2e`      | Run Playwright end-to-end tests (auto-starts Vite dev server)                                |
 | `pnpm test:e2e:ui`   | Open the Playwright interactive UI                                                           |
 
+## Android
+
+Each GitHub Release also contains a signed Android APK (Android 8.0 / API 26 or newer).
+
+1. Download `GPG-Local_<version>_android.apk` and `GPG-Local_<version>_android.apk.sha256` from the [Releases](https://github.com/sitMCella/gpg-local/releases) page.
+2. Verify the checksum: `sha256sum -c GPG-Local_<version>_android.apk.sha256` (macOS: `shasum -a 256 -c …`).
+3. Open the APK on the device and allow installs from your browser or file manager when Android asks.
+
+Optionally check the signer before installing (`apksigner` ships with the Android SDK build-tools):
+
+```bash
+apksigner verify --print-certs GPG-Local_<version>_android.apk
+```
+
+The `Signer #1 certificate SHA-256 digest` must equal:
+
+```
+<to be filled in when the upload keystore is created>
+```
+
+Android refuses to upgrade an installed app with an APK signed by a different key, so every future release keeps this signer.
+
 ## Releasing a new version
 
-Releases are published automatically by the [Release workflow](.github/workflows/release.yml) when a version tag is pushed. The workflow builds platform installers for macOS (Apple Silicon + Intel), Windows, and Linux, then attaches them to a GitHub Release.
+Releases are published automatically by the [Release workflow](.github/workflows/release.yml) when a version tag is pushed. The workflow builds platform installers for macOS (Apple Silicon + Intel), Windows, and Linux, then attaches them to a GitHub Release. After the desktop jobs finish, the `android-release` job builds a signed release APK from the same tag and attaches `GPG-Local_<version>_android.apk` and its `.sha256` checksum to that release.
+
+The Android `versionName` is read from `package.json`, and `versionCode` is `MAJOR * 10000 + MINOR * 100 + PATCH` (e.g. `0.1.4` → `104`), so minor and patch must stay below 100. Android-only changes go under an `### Android` sub-heading in the version's `CHANGELOG.md` section.
 
 ### Steps
 
 **1. Bump the version in all three manifests** — they must all agree or the workflow will fail:
 
-| File | Field |
-|------|-------|
-| `package.json` | `"version"` |
+| File                        | Field       |
+| --------------------------- | ----------- |
+| `package.json`              | `"version"` |
 | `src-tauri/tauri.conf.json` | `"version"` |
-| `src-tauri/Cargo.toml` | `version` |
+| `src-tauri/Cargo.toml`      | `version`   |
 
 **2. Commit and merge to `main`:**
 
@@ -98,7 +122,31 @@ git tag v0.2.0
 git push origin v0.2.0
 ```
 
-Pushing the tag triggers the release workflow. Once all four build jobs complete, the installers are attached to a new GitHub Release tagged `v0.2.0`.
+Pushing the tag triggers the release workflow. Once all four build jobs complete, the installers are attached to a new GitHub Release tagged `v0.2.0`, followed by the Android APK.
+
+### Android signing key
+
+The release APK is signed with an upload key held only in repository secrets. Create it once, offline:
+
+```bash
+keytool -genkeypair -v -keystore upload.jks -alias gpglocal \
+  -keyalg RSA -keysize 4096 -validity 10000
+```
+
+Then add these repository secrets (Settings → Secrets and variables → Actions):
+
+| Secret                      | Value                                                             |
+| --------------------------- | ----------------------------------------------------------------- |
+| `ANDROID_KEYSTORE_BASE64`   | output of `base64 -w0 upload.jks` (macOS: `base64 -i upload.jks`) |
+| `ANDROID_KEYSTORE_PASSWORD` | keystore password                                                 |
+| `ANDROID_KEY_ALIAS`         | `gpglocal`                                                        |
+| `ANDROID_KEY_PASSWORD`      | key password                                                      |
+
+Record the certificate SHA-256 fingerprint (`apksigner verify --print-certs` on the first signed APK, or `keytool -list -v -keystore upload.jks`) in the [Android](#android) section above.
+
+> **Keep an encrypted offline backup of `upload.jks` and its passwords.** If the key is lost, installed apps cannot be upgraded to newer APKs. Users would have to uninstall first, which deletes the app's keyring and every secret key in it.
+
+Local `./gradlew assembleRelease` builds stay unsigned: signing is enabled only when `ANDROID_KEYSTORE_PATH` is set, which only the release workflow does.
 
 ## License
 

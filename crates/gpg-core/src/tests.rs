@@ -769,3 +769,162 @@ fn import_key_rejects_garbage() {
     assert!(import_key(&kr, "not a key").is_err());
     assert!(list_keys(&kr).unwrap().is_empty());
 }
+
+// ── Interop with the gpg CLI (feature-gated) ──────────────────────────────────
+
+/// Two-way compatibility checks against GnuPG. Enabled with
+/// `--features gpg-interop-tests` so a plain `cargo test` does not need `gpg`.
+#[cfg(feature = "gpg-interop-tests")]
+mod interop {
+    use super::*;
+    use std::path::Path;
+    use std::process::{Command, Stdio};
+
+    const PASSPHRASE: &str = "correct horse battery";
+    const PLAINTEXT: &[u8] = b"interop payload\nsecond line\n";
+
+    /// Runs gpg in batch mode against an isolated home directory, feeding
+    /// `stdin` and returning stdout. Panics with gpg's stderr on failure.
+    fn gpg(home: &Path, args: &[&str], stdin: &[u8]) -> Vec<u8> {
+        let mut child = Command::new("gpg")
+            .arg("--homedir")
+            .arg(home)
+            .args(["--batch", "--yes", "--quiet", "--pinentry-mode", "loopback"])
+            .args(args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("gpg must be installed for interop tests");
+        child.stdin.take().unwrap().write_all(stdin).unwrap();
+        let out = child.wait_with_output().unwrap();
+        assert!(
+            out.status.success(),
+            "gpg {args:?} failed: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        out.stdout
+    }
+
+    fn gpg_home() -> tempfile::TempDir {
+        let home = tempdir().unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(home.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+        }
+        home
+    }
+
+    fn core_encrypt(kr: &Keyring, recipients: &[String], passphrase: Option<&str>) -> Vec<u8> {
+        let mut out = Vec::new();
+        encrypt(
+            kr,
+            EncryptParams {
+                recipient_fingerprints: recipients,
+                passphrase,
+            },
+            &mut &PLAINTEXT[..],
+            &mut out,
+        )
+        .unwrap();
+        out
+    }
+
+    fn core_decrypt(kr: &Keyring, ciphertext: &[u8], passphrase: &str) -> Vec<u8> {
+        let mut out = Vec::new();
+        decrypt(kr, passphrase, ciphertext, &mut out).unwrap();
+        out
+    }
+
+    #[test]
+    fn interop_gpg_symmetric_decrypts_in_core() {
+        let home = gpg_home();
+        let dir = tempdir().unwrap();
+        let kr = Keyring::open(dir.path().to_path_buf()).unwrap();
+
+        let ciphertext = gpg(
+            home.path(),
+            &[
+                "--symmetric",
+                "--cipher-algo",
+                "AES256",
+                "--passphrase",
+                PASSPHRASE,
+            ],
+            PLAINTEXT,
+        );
+        assert_eq!(core_decrypt(&kr, &ciphertext, PASSPHRASE), PLAINTEXT);
+    }
+
+    #[test]
+    fn interop_core_symmetric_decrypts_in_gpg() {
+        let home = gpg_home();
+        let dir = tempdir().unwrap();
+        let kr = Keyring::open(dir.path().to_path_buf()).unwrap();
+
+        let ciphertext = core_encrypt(&kr, &[], Some(PASSPHRASE));
+        let plain = gpg(
+            home.path(),
+            &["--decrypt", "--passphrase", PASSPHRASE],
+            &ciphertext,
+        );
+        assert_eq!(plain, PLAINTEXT);
+    }
+
+    #[test]
+    fn interop_core_public_key_decrypts_in_gpg() {
+        let home = gpg_home();
+        let dir = tempdir().unwrap();
+        let kr = Keyring::open(dir.path().to_path_buf()).unwrap();
+        let info = generate_key(&kr, "Interop", "interop@example.com", PASSPHRASE).unwrap();
+
+        let tsk = kr
+            .find(&info.fingerprint)
+            .unwrap()
+            .unwrap()
+            .as_tsk()
+            .armored()
+            .to_vec()
+            .unwrap();
+        gpg(home.path(), &["--passphrase", PASSPHRASE, "--import"], &tsk);
+
+        let ciphertext = core_encrypt(&kr, std::slice::from_ref(&info.fingerprint), None);
+        let plain = gpg(
+            home.path(),
+            &["--decrypt", "--passphrase", PASSPHRASE],
+            &ciphertext,
+        );
+        assert_eq!(plain, PLAINTEXT);
+    }
+
+    #[test]
+    fn interop_gpg_public_key_decrypts_in_core() {
+        let home = gpg_home();
+        let dir = tempdir().unwrap();
+        let kr = Keyring::open(dir.path().to_path_buf()).unwrap();
+        let info = generate_key(&kr, "Interop", "interop@example.com", PASSPHRASE).unwrap();
+
+        let public = kr
+            .find(&info.fingerprint)
+            .unwrap()
+            .unwrap()
+            .armored()
+            .to_vec()
+            .unwrap();
+        gpg(home.path(), &["--import"], &public);
+
+        let ciphertext = gpg(
+            home.path(),
+            &[
+                "--encrypt",
+                "--trust-model",
+                "always",
+                "--recipient",
+                &info.fingerprint,
+            ],
+            PLAINTEXT,
+        );
+        assert_eq!(core_decrypt(&kr, &ciphertext, PASSPHRASE), PLAINTEXT);
+    }
+}

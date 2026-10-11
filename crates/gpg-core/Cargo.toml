@@ -10,6 +10,10 @@ description = "Tauri-free OpenPGP core shared by the GPG Local desktop and Andro
 [lib]
 crate-type = ["rlib"]
 
+[features]
+# Enables tests that shell out to the `gpg` CLI (run in CI: `-- interop`).
+gpg-interop-tests = []
+
 [dependencies]
 # Feature set must stay identical to src-tauri/Cargo.toml so both builds produce the same output.
 sequoia-openpgp = { version = "1", default-features = false, features = [

@@ -1,0 +1,212 @@
+name: Android CI
+
+on:
+  pull_request:
+    paths:
+      - 'crates/**'
+      - 'android/**'
+      - 'src-tauri/**'
+      - '.github/workflows/android-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'crates/**'
+      - 'android/**'
+      - 'src-tauri/**'
+      - '.github/workflows/android-ci.yml'
+
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NDK_VERSION: '28.0.13004108'
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust-core:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          workspaces: |
+            crates/gpg-core -> target
+            crates/gpg-core-ffi -> target
+
+      - name: Format
+        run: |
+          cargo fmt --manifest-path crates/gpg-core/Cargo.toml -- --check
+          cargo fmt --manifest-path crates/gpg-core-ffi/Cargo.toml -- --check
+
+      - name: Clippy
+        run: |
+          cargo clippy --locked --manifest-path crates/gpg-core/Cargo.toml --all-targets --features gpg-interop-tests -- -D warnings
+          cargo clippy --locked --manifest-path crates/gpg-core-ffi/Cargo.toml --all-targets -- -D warnings
+
+      - name: Test
+        run: |
+          cargo test --locked --manifest-path crates/gpg-core/Cargo.toml
+          cargo test --locked --manifest-path crates/gpg-core-ffi/Cargo.toml
+
+      - name: Core has no Tauri or UniFFI dependency
+        run: |
+          if cargo tree --locked --manifest-path crates/gpg-core/Cargo.toml | grep -iE 'tauri|uniffi'; then
+            echo "gpg-core must not depend on Tauri or UniFFI"
+            exit 1
+          fi
+
+      - name: Interop with gpg CLI
+        run: |
+          sudo apt-get install -y gnupg
+          cargo test --locked --manifest-path crates/gpg-core/Cargo.toml --features gpg-interop-tests -- interop
+
+  android-build:
+    runs-on: ubuntu-22.04
+    needs: rust-core
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup Java
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          workspaces: crates/gpg-core-ffi -> target
+          key: android
+
+      - name: Install NDK
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;$NDK_VERSION" > /dev/null
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --version ^3.5 --locked
+
+      - name: Build native libraries and Kotlin bindings
+        run: crates/gpg-core-ffi/build-android.sh
+
+      - name: Verify native libraries
+        run: |
+          READELF="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
+          for so in crates/gpg-core-ffi/dist/jniLibs/*/libgpg_core_ffi.so; do
+            echo "== $so"
+            # Only Android system libraries may be linked.
+            if "$READELF" -d "$so" | grep NEEDED | grep -vE 'lib(c|m|dl|log)\.so'; then
+              echo "unexpected native dependency in $so"
+              exit 1
+            fi
+            # Every LOAD segment must be 16 KB aligned.
+            if "$READELF" -lW "$so" | awk '$1 == "LOAD" { print $NF }' | grep -v '^0x4000$'; then
+              echo "$so is not 16 KB page-aligned"
+              exit 1
+            fi
+          done
+          test -f crates/gpg-core-ffi/dist/kotlin/com/gpglocal/core/gpg_core_ffi.kt
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+
+      - name: Build, unit test, lint
+        working-directory: android
+        run: ./gradlew assembleDebug test lintDebug -Pgpglocal.skipRust=true
+
+      - name: Verify APK alignment
+        run: |
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 -v 4 \
+            android/app/build/outputs/apk/debug/app-debug.apk > /dev/null
+
+      - name: Upload native dist
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gpg-core-ffi-dist
+          path: crates/gpg-core-ffi/dist/
+          retention-days: 7
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: app-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: android-reports
+          path: android/**/build/reports/**
+          retention-days: 7
+
+  android-instrumented:
+    runs-on: ubuntu-22.04
+    needs: android-build
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [26, 35]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Download native dist
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: gpg-core-ffi-dist
+          path: crates/gpg-core-ffi/dist
+
+      - name: Setup Java
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Instrumented tests
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          arch: x86_64
+          target: ${{ matrix.api-level >= 30 && 'google_apis' || 'default' }}
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: cd android && ./gradlew connectedDebugAndroidTest -Pgpglocal.skipRust=true
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: instrumented-reports-api${{ matrix.api-level }}
+          path: android/**/build/reports/androidTests/**
+          retention-days: 7
