@@ -33,6 +33,7 @@ import com.gpglocal.app.ui.common.FileCard
 import com.gpglocal.app.ui.common.InlineError
 import com.gpglocal.app.ui.common.OperationProgress
 import com.gpglocal.app.ui.common.PassphraseField
+import com.gpglocal.app.ui.common.Presentation
 import com.gpglocal.app.ui.common.SecureScreen
 import com.gpglocal.app.ui.common.WrongModeBanner
 
@@ -41,18 +42,24 @@ import com.gpglocal.app.ui.common.WrongModeBanner
  *
  * @param onBusyChange true while a file is being written; the shell disables the bottom navigation.
  * @param onDecryptInstead the picked file is already encrypted and the user wants to decrypt it.
+ * @param presentation [Presentation.Share] hides **Change** and reports success through [onSuccess]
+ *   instead of a snackbar.
+ * @param onSuccess called on success in [Presentation.Share] only.
  */
 @Composable
 fun EncryptScreen(
     onBusyChange: (Boolean) -> Unit,
     onDecryptInstead: (Uri) -> Unit,
     modifier: Modifier = Modifier,
+    presentation: Presentation = Presentation.Tab,
+    onSuccess: (EncryptEvent.Encrypted) -> Unit = {},
     viewModel: EncryptViewModel = viewModel(factory = EncryptViewModel.Factory),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbar = LocalAppSnackbar.current
     val currentOnBusyChange by rememberUpdatedState(onBusyChange)
+    val currentOnSuccess by rememberUpdatedState(onSuccess)
 
     SecureScreen()
 
@@ -67,8 +74,11 @@ fun EncryptScreen(
         viewModel.events.collect { e ->
             when (e) {
                 is EncryptEvent.RequestOutputLocation -> createDocument.launch(e.suggestedName)
-                is EncryptEvent.Encrypted ->
-                    snackbar.show(context.getString(R.string.encrypt_success, e.inputName, e.outputName))
+                is EncryptEvent.Encrypted -> when (presentation) {
+                    Presentation.Tab ->
+                        snackbar.show(context.getString(R.string.encrypt_success, e.inputName, e.outputName))
+                    Presentation.Share -> currentOnSuccess(e)
+                }
             }
         }
     }
@@ -89,6 +99,7 @@ fun EncryptScreen(
         onTogglePassphrase = viewModel::onTogglePassphraseVisibility,
         onToggleConfirm = viewModel::onToggleConfirmVisibility,
         onSubmit = viewModel::onSubmit,
+        changeable = presentation == Presentation.Tab,
         modifier = modifier,
     )
 }
@@ -103,6 +114,7 @@ private fun EncryptContent(
     onTogglePassphrase: () -> Unit,
     onToggleConfirm: () -> Unit,
     onSubmit: () -> Unit,
+    changeable: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val fieldsEnabled = state.input != null && !state.alreadyEncrypted && !state.loading
@@ -122,6 +134,7 @@ private fun EncryptContent(
             enabled = !state.loading,
             onChooseFile = onChooseFile,
             testTagPrefix = "encrypt",
+            changeable = changeable,
         )
 
         if (state.alreadyEncrypted) {

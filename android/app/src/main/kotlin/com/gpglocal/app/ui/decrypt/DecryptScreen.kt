@@ -1,7 +1,5 @@
 package com.gpglocal.app.ui.decrypt
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -39,26 +37,34 @@ import com.gpglocal.app.ui.common.FileCard
 import com.gpglocal.app.ui.common.InlineError
 import com.gpglocal.app.ui.common.OperationProgress
 import com.gpglocal.app.ui.common.PassphraseField
+import com.gpglocal.app.ui.common.Presentation
 import com.gpglocal.app.ui.common.SecureScreen
 import com.gpglocal.app.ui.common.WrongModeBanner
+import com.gpglocal.app.ui.common.viewDocument
 
 /**
  * Decrypt flow: Choose file → passphrase → Decrypt → system "Save as" picker.
  *
  * @param onBusyChange true while a file is being written; the shell disables the bottom navigation.
  * @param onEncryptInstead the picked file is not encrypted and the user wants to encrypt it.
+ * @param presentation [Presentation.Share] hides **Change** and reports success through [onSuccess]
+ *   instead of a snackbar.
+ * @param onSuccess called on success in [Presentation.Share] only.
  */
 @Composable
 fun DecryptScreen(
     onBusyChange: (Boolean) -> Unit,
     onEncryptInstead: (Uri) -> Unit,
     modifier: Modifier = Modifier,
+    presentation: Presentation = Presentation.Tab,
+    onSuccess: (DecryptEvent.Decrypted) -> Unit = {},
     viewModel: DecryptViewModel = viewModel(factory = DecryptViewModel.Factory),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbar = LocalAppSnackbar.current
     val currentOnBusyChange by rememberUpdatedState(onBusyChange)
+    val currentOnSuccess by rememberUpdatedState(onSuccess)
 
     SecureScreen()
 
@@ -73,19 +79,16 @@ fun DecryptScreen(
         viewModel.events.collect { e ->
             when (e) {
                 is DecryptEvent.RequestOutputLocation -> createDocument.launch(e.suggestedName to e.mimeType)
-                is DecryptEvent.Decrypted -> snackbar.show(
-                    message = context.getString(R.string.decrypt_success, e.inputName, e.outputName),
-                    actionLabel = context.getString(R.string.decrypt_open),
-                ) {
-                    // Hands the URI to a viewer with a one-time read grant; the app never reads the plaintext.
-                    val view = Intent(Intent.ACTION_VIEW)
-                        .setDataAndType(e.outputUri, e.mimeType)
-                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    try {
-                        context.startActivity(view)
-                    } catch (e: ActivityNotFoundException) {
-                        snackbar.show(context.getString(R.string.decrypt_no_app, e.outputName))
+                is DecryptEvent.Decrypted -> when (presentation) {
+                    Presentation.Tab -> snackbar.show(
+                        message = context.getString(R.string.decrypt_success, e.inputName, e.outputName),
+                        actionLabel = context.getString(R.string.decrypt_open),
+                    ) {
+                        if (!context.viewDocument(e.outputUri, e.mimeType)) {
+                            snackbar.show(context.getString(R.string.decrypt_no_app, e.outputName))
+                        }
                     }
+                    Presentation.Share -> currentOnSuccess(e)
                 }
             }
         }
@@ -110,6 +113,7 @@ fun DecryptScreen(
         onPassphraseChange = viewModel::onPassphraseChange,
         onTogglePassphrase = viewModel::onTogglePassphraseVisibility,
         onSubmit = viewModel::onSubmit,
+        changeable = presentation == Presentation.Tab,
         modifier = modifier,
     )
 }
@@ -122,6 +126,7 @@ private fun DecryptContent(
     onPassphraseChange: (String) -> Unit,
     onTogglePassphrase: () -> Unit,
     onSubmit: () -> Unit,
+    changeable: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val decryptable = state.input != null && !state.notEncrypted
@@ -148,6 +153,7 @@ private fun DecryptContent(
             enabled = !state.loading,
             onChooseFile = onChooseFile,
             testTagPrefix = "decrypt",
+            changeable = changeable,
         )
 
         if (state.notEncrypted) {

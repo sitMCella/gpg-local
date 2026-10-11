@@ -33,6 +33,7 @@ import com.gpglocal.app.ui.theme.LocalGpgColors
  * @param encrypted shows the amber lock instead of the generic file icon.
  * @param outputName suggested output name; hidden when null.
  * @param note optional line under the output name.
+ * @param changeable shows **Change** once a file is picked; false when the file is fixed (share mode).
  * @param testTagPrefix prefix for the test tags (`<prefix>_file_name`, `<prefix>_choose_file`, …).
  */
 @Composable
@@ -44,6 +45,7 @@ fun FileCard(
     onChooseFile: () -> Unit,
     testTagPrefix: String,
     note: String? = null,
+    changeable: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -99,19 +101,21 @@ fun FileCard(
                     }
                 }
             }
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                if (input == null) {
-                    FilledTonalButton(
-                        onClick = onChooseFile,
-                        enabled = enabled,
-                        modifier = Modifier.testTag("${testTagPrefix}_choose_file"),
-                    ) { Text(stringResource(R.string.choose_file)) }
-                } else {
-                    TextButton(
-                        onClick = onChooseFile,
-                        enabled = enabled,
-                        modifier = Modifier.testTag("${testTagPrefix}_change_file"),
-                    ) { Text(stringResource(R.string.change_file)) }
+            if (input == null || changeable) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    if (input == null) {
+                        FilledTonalButton(
+                            onClick = onChooseFile,
+                            enabled = enabled,
+                            modifier = Modifier.testTag("${testTagPrefix}_choose_file"),
+                        ) { Text(stringResource(R.string.choose_file)) }
+                    } else {
+                        TextButton(
+                            onClick = onChooseFile,
+                            enabled = enabled,
+                            modifier = Modifier.testTag("${testTagPrefix}_change_file"),
+                        ) { Text(stringResource(R.string.change_file)) }
+                    }
                 }
             }
         }
