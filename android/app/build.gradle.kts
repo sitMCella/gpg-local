@@ -1,8 +1,25 @@
+import groovy.json.JsonSlurper
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
+
+// Single source of version truth: package.json, which release.yml already checks against
+// tauri.conf.json and src-tauri/Cargo.toml.
+val appVersion: String =
+    (JsonSlurper().parse(rootProject.projectDir.resolve("../package.json")) as Map<*, *>)["version"] as String
+
+// MAJOR * 10_000 + MINOR * 100 + PATCH → 0.1.4 = 104, 1.2.3 = 10203
+val appVersionCode: Int =
+    appVersion.split('.').map(String::toInt).let { (maj, min, pat) ->
+        require(min < 100 && pat < 100) { "minor/patch must be < 100 for versionCode: $appVersion" }
+        maj * 10_000 + min * 100 + pat
+    }
+
+// Set only by the release workflow; local builds stay unsigned.
+val releaseKeystore: String? = System.getenv("ANDROID_KEYSTORE_PATH")
 
 android {
     namespace = "com.gpglocal.app"
@@ -11,18 +28,36 @@ android {
         applicationId = "com.gpglocal.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = appVersionCode
+        versionName = appVersion
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
+    }
+    signingConfigs {
+        create("release") {
+            if (releaseKeystore != null) {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
     }
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // signing config added in feature 16
+            if (releaseKeystore != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
+    }
+    lint {
+        abortOnError = true
+        warningsAsErrors = false
     }
     buildFeatures {
         compose = true

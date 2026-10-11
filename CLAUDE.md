@@ -17,6 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 @specs/features/13-android-encrypt-file.md
 @specs/features/14-android-decrypt-file.md
 @specs/features/15-android-share-intent.md
+@specs/features/16-android-ci.md
 
 ## Project motivation
 
@@ -123,7 +124,10 @@ cd android && ./gradlew installDebug                    # install on connected d
 cd android && ./gradlew test                            # JVM unit tests
 cd android && ./gradlew connectedDebugAndroidTest       # instrumented + Compose UI tests
 cd android && ./gradlew assembleDebug -Pgpglocal.skipRust=true   # reuse existing dist/
+cargo test --manifest-path crates/gpg-core/Cargo.toml --features gpg-interop-tests -- interop   # needs gpg on PATH
 ```
+
+CI: `.github/workflows/android-ci.yml` (PRs and pushes to `main` touching `crates/**`, `android/**`, `src-tauri/**`) runs `rust-core` (fmt, clippy, tests, no Tauri/UniFFI in `gpg-core`, `gpg` CLI interop), `android-build` (native libs built once, linked-library and 16 KB alignment checks, `assembleDebug test lintDebug`, uploads `gpg-core-ffi-dist`) and `android-instrumented` (API 26 and 35 `x86_64` emulators with `-Pgpglocal.skipRust=true`). `release.yml` adds `android-release` after the desktop matrix: signed `assembleRelease` (keystore from secrets via `ANDROID_KEYSTORE_PATH`), `apksigner`, `zipalign -P 16` and `versionName` checks, then `gh release upload` of `GPG-Local_<version>_android.apk` and its `.sha256`. The Android `versionName` comes from `package.json`, and `versionCode` is `MAJOR * 10000 + MINOR * 100 + PATCH`.
 
 Run a single unit test file:
 
