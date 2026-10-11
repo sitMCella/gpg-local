@@ -1919,12 +1919,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "gpg-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "sequoia-openpgp",
+ "serde",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "gpg-local"
 version = "0.1.4"
 dependencies = [
- "anyhow",
+ "gpg-core",
  "log",
- "sequoia-openpgp",
  "serde",
  "serde_json",
  "tauri",

@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 @specs/features/07-open-text-file.md
 @specs/features/08-open-directory.md
 @specs/features/09-gpg-core-crate.md
+@specs/features/10-tauri-core-integration.md
 
 ## Project motivation
 
@@ -38,7 +39,11 @@ gpg-local/
 │   ├── icons/            # App icons for all platforms (generated)
 │   └── src/
 │       ├── main.rs       # Tauri entry point
-│       └── lib.rs        # Command registrations
+│       ├── lib.rs        # Command registrations
+│       ├── commands.rs   # Thin Tauri command wrappers over gpg-core
+│       ├── fs_io.rs      # open_input, write_atomically (temp file + rename)
+│       ├── types.rs      # Path DTOs; KeyInfo re-exported from gpg-core
+│       └── tests.rs      # Serde contract + fs_io tests
 ├── crates/
 │   └── gpg-core/         # Tauri-free OpenPGP core (stream API), shared with Android
 │       ├── Cargo.toml    # Standalone crate (no root workspace)
@@ -58,11 +63,11 @@ gpg-local/
 
 The UI layer is a Vite + React 19 SPA (`src/`). `src/main.tsx` mounts the React root; `src/App.tsx` is the root component. There is no router or state management library yet — the component tree is flat at this stage.
 
-The Tauri core (`src-tauri/`) wraps the UI in an OS-native window. In development, Tauri points at the Vite dev server (`http://localhost:5173`). In production, it serves the compiled `dist/` output. GPG invocations will be wired as Tauri commands in `src-tauri/src/lib.rs` (tracked separately).
+The Tauri core (`src-tauri/`) wraps the UI in an OS-native window. In development, Tauri points at the Vite dev server (`http://localhost:5173`). In production, it serves the compiled `dist/` output. All OpenPGP logic lives in `crates/gpg-core`; `src-tauri` only resolves the keyring dir (`<app_data_dir>/keyring/`), opens user paths, runs work via `spawn_blocking`, and writes output atomically (hidden `.gpg-local-*.tmp` in the target dir, renamed on success) so a failed operation never touches an existing output file.
 
 `vite.config.ts` doubles as the Vitest config: unit tests run in jsdom, use Vitest globals, and are picked up from `src/**/*.{test,spec}.{ts,tsx}`. The test setup file (`src/test/setup.ts`) imports `@testing-library/jest-dom` matchers globally.
 
-`crates/gpg-core/` is a standalone Rust library (no Tauri dependency) holding the OpenPGP logic: `Keyring`, `KeyringHelper`, `KeyInfo`/`cert_to_info`, and `encrypt`/`decrypt`/`list_keys`/`import_key`/`generate_key` over `Read`/`Write` streams. Errors are a typed `CoreError` whose `Display` strings are shown verbatim by the UI. It is not a Cargo workspace member; `src-tauri` will consume it as a path dependency (feature 10) and the Android app via UniFFI (feature 11).
+`crates/gpg-core/` is a standalone Rust library (no Tauri dependency) holding the OpenPGP logic: `Keyring`, `KeyringHelper`, `KeyInfo`/`cert_to_info`, and `encrypt`/`decrypt`/`list_keys`/`import_key`/`generate_key` over `Read`/`Write` streams. Errors are a typed `CoreError` whose `Display` strings are shown verbatim by the UI. It is not a Cargo workspace member; `src-tauri` consumes it as a path dependency (feature 10) and the Android app will via UniFFI (feature 11).
 
 Playwright e2e tests live in `e2e/` and target `http://localhost:5173`. The Playwright config starts the Vite dev server automatically when running locally (`reuseExistingServer: true`), so `pnpm dev` does not need to be running beforehand.
 
@@ -87,6 +92,7 @@ Rust core crate:
 ```bash
 cargo test --manifest-path crates/gpg-core/Cargo.toml
 cargo clippy --manifest-path crates/gpg-core/Cargo.toml --all-targets -- -D warnings
+cargo test --manifest-path src-tauri/Cargo.toml   # serde contract + fs_io tests
 ```
 
 Run a single unit test file:

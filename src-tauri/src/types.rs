@@ -1,12 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct KeyInfo {
-    pub fingerprint: String,
-    pub user_ids: Vec<String>,
-    pub has_secret: bool,
-    pub created_at: i64,
-}
+pub use gpg_core::KeyInfo;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EncryptOptions {
