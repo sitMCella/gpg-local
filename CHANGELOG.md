@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Android-only changes are listed under an `### Android` sub-heading inside the version section, so the release notes cover both the desktop and the Android app.
 
+## [0.1.5] - 2026-10-11
+
+### Changed
+
+- **Shared OpenPGP core** — all encryption, decryption and keyring logic moved from the Tauri backend into the new Tauri-free `gpg-core` crate (`crates/gpg-core`), which the desktop and Android apps now share. Cryptographic behaviour, algorithms, the keyring location (`<app data>/keyring/`) and its on-disk format are unchanged, so existing keys and `.gpg` files keep working without migration. Error messages shown in the dialogs are unchanged.
+- **Atomic output files** — encrypting or decrypting now writes to a hidden temporary file in the target folder and renames it into place only on success. A wrong passphrase or any other failure no longer creates, truncates or overwrites an existing output file, and no temporary files are left behind. A successful operation still silently replaces an existing output file.
+- **Responsive UI during large operations** — encryption and decryption run off the main thread and stream the input instead of reading the whole file into memory first.
+
+### Android
+
+- **First Android release** — native app for Android 8.0 (API 26) and newer, built with Kotlin and Jetpack Compose on top of the shared `gpg-core` crate through UniFFI bindings. Files encrypted on the desktop decrypt on Android and vice versa, and both interoperate with `gpg --symmetric`.
+- **Encrypt files** — pick any file with the system file picker, enter and confirm a passphrase (same validation rules and messages as the desktop app), and save the `.gpg` output with the system "Save as" picker. Files are streamed through file descriptors, so large files do not exhaust memory. A partially written output is deleted on failure.
+- **Decrypt files** — pick a `.gpg` / `.pgp` file, enter the passphrase and save the plaintext (suggested name: the input name without `.gpg` / `.pgp`). The success message offers **Open** to view the result in another app. A wrong passphrase clears the field and deletes the partial output.
+- **Share sheet and "Open with"** — share any single file to GPG Local from another app, or open `.gpg` files with it: encrypted files open the Decrypt flow, everything else opens the Encrypt flow, with the file already selected. After encrypting, **Share encrypted file** sends the `.gpg` onward in one tap. Decrypted plaintext is only offered to a viewer, never to a share target.
+- **Privacy defaults** — no network or storage permissions (files are reached only through the Storage Access Framework), the keyring is excluded from cloud backup and device transfer, screenshots are blocked on passphrase screens, and passphrases are never saved to disk or restored after the app is killed.
+- **Signed APK in GitHub Releases** — each release now includes `GPG-Local_<version>_android.apk` and its `.sha256` checksum. The Android version follows the desktop version.
+
 ## [0.1.4] - 2026-09-19
 
 ### Added
