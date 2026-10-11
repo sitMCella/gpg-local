@@ -161,11 +161,31 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Decode keystore
+      - name: Decode and check keystore
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          # A missing secret expands to an empty string; fail here with a clear message
+          # instead of an opaque keystore parse error during packageRelease.
+          missing=0
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository secret $name is missing or empty"
+              missing=1
+            fi
+          done
+          [ "$missing" -eq 0 ] || exit 1
+
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          # Passwords are read from the environment (:env), never passed as arguments.
+          if ! keytool -list -keystore "$RUNNER_TEMP/upload.jks" -storepass:env ANDROID_KEYSTORE_PASSWORD \
+              -alias "$ANDROID_KEY_ALIAS" > /dev/null; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not a readable keystore with alias '$ANDROID_KEY_ALIAS' for ANDROID_KEYSTORE_PASSWORD (it must be the single-line output of 'base64 -w0 upload.jks')"
+            exit 1
+          fi
           echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
 
       - name: Build signed release APK
