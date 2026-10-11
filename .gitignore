@@ -19,3 +19,11 @@ crates/gpg-core/target/
 # gpg-core-ffi
 crates/gpg-core-ffi/target/
 crates/gpg-core-ffi/dist/
+
+# Android
+android/.gradle/
+android/build/
+android/*/build/
+android/local.properties
+android/.idea/
+android/.kotlin/
