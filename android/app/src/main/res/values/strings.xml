@@ -38,4 +38,19 @@
     <string name="decrypt_go_to_encrypt">Encrypt it instead</string>
     <string name="decrypt_plaintext_note">The decrypted file will be readable by apps that can access that folder.</string>
     <string name="decrypt_cleanup_failed">The incomplete file %1$s could not be removed. Delete it manually.</string>
+
+    <!-- Share sheet / "Open with" (feature 15). -->
+    <string name="share_target_label">GPG Local</string>
+    <string name="share_title_encrypt">Encrypt with GPG Local</string>
+    <string name="share_title_decrypt">Decrypt with GPG Local</string>
+    <string name="share_close">Close</string>
+    <string name="share_rejected_no_file">GPG Local can only encrypt or decrypt files.</string>
+    <string name="share_rejected_multiple">Share one file at a time.</string>
+    <string name="share_rejected_unsupported_scheme">This file can\'t be opened. Share it from a file manager.</string>
+    <string name="share_rejected_unreadable">This file can\'t be opened.</string>
+    <string name="share_result_encrypted">%1$s encrypted</string>
+    <string name="share_result_decrypted">%1$s decrypted</string>
+    <string name="share_result_saved_as">Saved as %1$s</string>
+    <string name="share_result_share">Share encrypted file</string>
+    <string name="share_result_done">Done</string>
 </resources>

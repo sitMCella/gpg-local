@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <!-- No permissions: no INTERNET, no storage permissions (files come through SAF in features 13–15). -->
+    <!-- No permissions: no INTERNET, no storage permissions (files come through SAF and share intents, features 13–15). -->
 
     <!-- androidx.core adds this signature permission for ContextCompat.registerReceiver(RECEIVER_NOT_EXPORTED)
          on API < 33. The app registers no broadcast receivers, so drop it to keep the merged manifest permission-free. -->
@@ -29,6 +29,37 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Share sheet and "Open with" entry point (feature 15). Runs in the sender's task. -->
+        <activity
+            android:name=".share.ShareActivity"
+            android:exported="true"
+            android:label="@string/share_target_label"
+            android:icon="@mipmap/ic_launcher"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:windowSoftInputMode="adjustResize">
+            <!-- Empty taskAffinity: a launch with FLAG_ACTIVITY_NEW_TASK (some file managers) gets its own
+                 hidden task instead of landing on top of an open MainActivity task. -->
+
+            <!-- Share sheet: any single file. No SEND_MULTIPLE: multi-file shares do not list the app. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
+            </intent-filter>
+
+            <!-- "Open with" for OpenPGP files only. Not application/octet-stream: that would list the app
+                 for every unknown file. Such .gpg files are still reachable through the share sheet. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/pgp-encrypted" />
+                <data android:mimeType="application/pgp" />
             </intent-filter>
         </activity>
     </application>

@@ -179,7 +179,7 @@ class EncryptViewModelTest {
         assertEquals(1, gpg.calls)
         assertEquals("correct horse", gpg.lastPassphrase)
         assertEquals(EncryptUiState(), vm.state.value)
-        assertEquals(EncryptEvent.Encrypted("report.md", "report.md (1).gpg"), events.last())
+        assertEquals(EncryptEvent.Encrypted("report.md", "report.md (1).gpg", outputUri), events.last())
         assertTrue(documents.deleted.isEmpty())
     }
 

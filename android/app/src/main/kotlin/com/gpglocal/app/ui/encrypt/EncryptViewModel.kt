@@ -47,7 +47,8 @@ data class EncryptUiState(
 sealed interface EncryptEvent {
     data class RequestOutputLocation(val suggestedName: String) : EncryptEvent
 
-    data class Encrypted(val inputName: String, val outputName: String) : EncryptEvent
+    /** [outputUri] lets share mode offer the `.gpg` onwards; the tab snackbar only shows the names. */
+    data class Encrypted(val inputName: String, val outputName: String, val outputUri: Uri) : EncryptEvent
 }
 
 /**
@@ -176,7 +177,7 @@ class EncryptViewModel(
                     is GpgResult.Success -> {
                         setInput(null)
                         _state.value = EncryptUiState() // reset the form, drop the passphrase
-                        _events.send(EncryptEvent.Encrypted(input.displayName, outputName))
+                        _events.send(EncryptEvent.Encrypted(input.displayName, outputName, outputUri))
                     }
                     is GpgResult.Failure -> {
                         // The save picker created the output before we opened anything, so it always exists.
