@@ -67,7 +67,7 @@ fun EncryptScreen(
         uri?.let(viewModel::onInputPicked)
     }
     val createDocument = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/pgp-encrypted"),
+        ActivityResultContracts.CreateDocument("application/octet-stream"),
     ) { uri -> viewModel.onOutputPicked(uri) }
 
     LaunchedEffect(viewModel) {

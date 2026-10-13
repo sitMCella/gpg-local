@@ -22,6 +22,7 @@ import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
 import androidx.test.espresso.intent.rule.IntentsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.gpglocal.core.GpgKeyring
@@ -130,7 +131,15 @@ class EncryptScreenTest {
         composeRule.onNodeWithTag("encrypt_confirm").performImeAction()
         composeRule.waitForIdle()
 
-        intended(allOf(hasAction(Intent.ACTION_CREATE_DOCUMENT), hasExtra(Intent.EXTRA_TITLE, "report.md.gpg")))
+        // octet-stream, not application/pgp-encrypted: providers append the MIME type's own
+        // extension (.pgp) when the name's extension does not match, giving report.md.gpg.pgp.
+        intended(
+            allOf(
+                hasAction(Intent.ACTION_CREATE_DOCUMENT),
+                hasExtra(Intent.EXTRA_TITLE, "report.md.gpg"),
+                hasType("application/octet-stream"),
+            ),
+        )
     }
 
     @Test
