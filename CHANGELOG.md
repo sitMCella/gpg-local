@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Android-only changes are listed under an `### Android` sub-heading inside the version section, so the release notes cover both the desktop and the Android app.
 
+## [0.1.6] - 2026-10-13
+
+### Android
+
+- **Encrypted files keep the `.gpg` extension** — the "Save as" picker no longer turns `report.md.gpg` into `report.md.gpg.pgp`. Some storage providers appended their own `.pgp` extension because the save request used the `application/pgp-encrypted` type; it now uses a generic binary type, so the suggested name is kept as-is.
+- **New app icon** — the launcher icon (standard, round and adaptive) now uses the GPG Local artwork instead of the placeholder.
+
 ## [0.1.5] - 2026-10-11
 
 ### Changed
